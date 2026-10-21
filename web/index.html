@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>內科錯峰效益模擬器</title>
-<meta name="description" content="用臺北市 VD 實測資料校準的內湖晨峰模擬器：誰移、移多少、省下的時間歸誰。">
+<title>內湖錯峰協商台</title>
+<meta name="description" content="內湖晨峰通勤口的錯峰試算：同樣的車次，改變的是等待。">
 <style>
 :root {
   color-scheme: light;
@@ -14,274 +14,175 @@
   --ink-2: #52514e;
   --muted: #898781;
   --grid: #e1e0d9;
-  --axis: #c3c2b7;
   --border: rgba(11, 11, 11, 0.10);
-  --accent: #2a78d6;
-  --s1: #2a78d6;   /* 原配置 */
-  --s2: #eb6834;   /* 錯峰後 */
-  --good-text: #006300;
-  --warn: #fab219;
-  --banner-bg: #fff4d6;
-  --banner-ink: #5c4200;
-  /* sequential blue, near-zero recedes toward the surface */
-  --h0: #eef4fc; --h1: #cde2fb; --h2: #9ec5f4; --h3: #6da7ec; --h4: #3987e5;
-  --h5: #2a78d6; --h6: #1c5cab; --h7: #104281; --h8: #0d366b;
+  --s1: #eb6834;   /* 原配置 */
+  --s2: #1baf7a;   /* 調整後 */
+  --good: #006300;
+  --chip: #f0efec;
+  --badge-bg: #fff4d6; --badge-ink: #6b4d00;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
     --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
-    --grid: #2c2c2a; --axis: #383835; --border: rgba(255, 255, 255, 0.10);
-    --accent: #3987e5; --s1: #3987e5; --s2: #d95926; --good-text: #0ca30c;
-    --banner-bg: #3a2e0a; --banner-ink: #f5d98a;
-    --h0: #1f2733; --h1: #104281; --h2: #184f95; --h3: #1c5cab; --h4: #256abf;
-    --h5: #2a78d6; --h6: #5598e7; --h7: #86b6ef; --h8: #b7d3f6;
+    --grid: #2c2c2a; --border: rgba(255, 255, 255, 0.10);
+    --s1: #d95926; --s2: #199e70; --good: #0ca30c; --chip: #262624;
+    --badge-bg: #3a2e0a; --badge-ink: #f5d98a;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
   --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
-  --grid: #2c2c2a; --axis: #383835; --border: rgba(255, 255, 255, 0.10);
-  --accent: #3987e5; --s1: #3987e5; --s2: #d95926; --good-text: #0ca30c;
-  --banner-bg: #3a2e0a; --banner-ink: #f5d98a;
-  --h0: #1f2733; --h1: #104281; --h2: #184f95; --h3: #1c5cab; --h4: #256abf;
-  --h5: #2a78d6; --h6: #5598e7; --h7: #86b6ef; --h8: #b7d3f6;
+  --grid: #2c2c2a; --border: rgba(255, 255, 255, 0.10);
+  --s1: #d95926; --s2: #199e70; --good: #0ca30c; --chip: #262624;
+  --badge-bg: #3a2e0a; --badge-ink: #f5d98a;
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body {
-  background: var(--page);
-  color: var(--ink);
-  font: 15px/1.6 system-ui, -apple-system, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  background: var(--page); color: var(--ink);
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
 }
-.wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
-header.top { padding: 28px 0 12px; }
-header.top h1 { font-size: 28px; line-height: 1.25; margin: 0 0 4px; font-weight: 650; }
-header.top p { margin: 0; color: var(--ink-2); }
-.banner {
-  margin: 12px 0 0; padding: 8px 12px; border-radius: 8px;
-  background: var(--banner-bg); color: var(--banner-ink); font-size: 14px;
-}
-.badge {
-  display: inline-block; font-size: 12px; line-height: 1; padding: 4px 8px; border-radius: 999px;
-  border: 1px solid var(--border); color: var(--ink-2); background: var(--surface); vertical-align: middle;
-  margin-left: 6px; font-weight: 500;
-}
-section.card {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-  padding: 20px; margin: 16px 0;
-}
-section.card > h2 { font-size: 19px; margin: 0 0 4px; font-weight: 620; }
-.sub { color: var(--ink-2); margin: 0 0 14px; font-size: 14px; }
-
-/* ---- main: controls + heatmap ---- */
-.main-grid { display: grid; grid-template-columns: 300px 1fr; gap: 24px; }
-@media (max-width: 860px) { .main-grid { grid-template-columns: 1fr; } }
-.main-grid > *, .charts > *, .stats > *, .who > * { min-width: 0; }
-.controls label { display: block; font-size: 14px; color: var(--ink-2); margin: 14px 0 4px; }
-.controls .val { float: right; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
-.controls input[type=range] { width: 100%; accent-color: var(--accent); }
-.arch-list { display: grid; gap: 6px; }
-.arch-btn {
-  text-align: left; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border);
-  background: transparent; color: var(--ink); cursor: pointer; font: inherit;
-}
-.arch-btn small { display: block; color: var(--muted); font-size: 12px; }
-.arch-btn[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-.threshold { margin-top: 16px; padding: 10px 12px; border-radius: 10px; background: var(--page); font-size: 14px; color: var(--ink-2); }
-.threshold b { color: var(--ink); }
-
-.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
-.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; padding: 2px; }
-.seg button {
-  border: 0; background: transparent; color: var(--ink-2); font: inherit; font-size: 13px;
-  padding: 4px 12px; border-radius: 999px; cursor: pointer;
-}
-.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
-.btn {
-  border: 1px solid var(--border); background: transparent; color: var(--ink); font: inherit; font-size: 13px;
-  padding: 5px 12px; border-radius: 999px; cursor: pointer;
-}
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px 32px; }
+.top { display: flex; align-items: center; gap: 10px; padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+.top b { font-size: 16px; }
+.badge { margin-left: auto; font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--badge-bg); color: var(--badge-ink); }
+.eyebrow { font-size: 13px; color: var(--muted); }
+h1 { font-size: 30px; line-height: 1.3; margin: 2px 0 18px; font-weight: 680; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+.card h2 { font-size: 15px; margin: 0 0 10px; font-weight: 620; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .spacer { flex: 1; }
+.muted { color: var(--muted); font-size: 13px; }
 
-.heat { display: grid; gap: 2px; font-size: 12px; }
-.heat .rowlab { color: var(--ink-2); padding-right: 8px; white-space: nowrap; display: flex; flex-direction: column; justify-content: center; line-height: 1.25; }
-.heat .rowlab small { color: var(--muted); font-size: 11px; }
-.heat .collab { color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; padding-top: 4px; }
-.heat .cell { height: 40px; border-radius: 4px; transition: background-color .35s, opacity .25s; }
-.heat .cell.future { opacity: .12; }
-.heat .cell.now { outline: 2px solid var(--ink); outline-offset: -2px; }
-.heat .cell.hit { outline: 2px solid var(--s2); outline-offset: -2px; }
-.heat .delta { font-size: 12px; color: var(--ink-2); display: flex; align-items: center; padding-left: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.heat-scroll { overflow-x: auto; }
-.legend-ramp { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-top: 10px; flex-wrap: wrap; }
-.legend-ramp .sw { width: 22px; height: 10px; border-radius: 2px; display: inline-block; }
+/* overview: gate picker */
+.ov { display: grid; grid-template-columns: max-content 1fr max-content; gap: 4px 10px; align-items: center; }
+.ov .name { font-size: 14px; cursor: pointer; background: none; border: 0; color: var(--ink-2); text-align: left; padding: 2px 0; font: inherit; }
+.ov .name.on { color: var(--ink); font-weight: 650; }
+.ov .name.on::before { content: "▸ "; }
+.ov .strip { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 2px; cursor: pointer; border-radius: 4px; }
+.ov .strip span { height: 18px; border-radius: 3px; }
+.ov .peak { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ov .ticks { grid-column: 2; display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
 
-.stats { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 12px; margin-top: 18px; }
+/* controls */
+.seg { display: inline-flex; background: var(--chip); border-radius: 10px; padding: 3px; }
+.seg button { border: 0; background: transparent; color: var(--ink-2); font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 8px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.chip { border: 1px solid var(--border); background: transparent; color: var(--ink); font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 8px; cursor: pointer; }
+.chip:hover { background: var(--chip); }
+.ctrl-grid { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 20px; margin-top: 16px; }
+@media (max-width: 760px) { .ctrl-grid { grid-template-columns: 1fr; } }
+.ctrl label { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2); margin-bottom: 6px; }
+.ctrl label b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.ctrl select { width: 100%; padding: 7px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); font: inherit; }
+.ctrl input[type=range] { width: 100%; accent-color: var(--s2); }
+.ctrl[aria-disabled="true"] { opacity: .4; pointer-events: none; }
+
+/* summary */
+.summary { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; margin: 18px 0 10px; }
+.summary .main { font-size: 18px; font-weight: 650; }
+.summary .split { font-size: 14px; color: var(--ink-2); }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
 @media (max-width: 640px) { .stats { grid-template-columns: 1fr; } }
-.stat { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; }
 .stat .label { font-size: 13px; color: var(--ink-2); }
-.stat .value { font-size: 26px; font-weight: 620; line-height: 1.2; margin-top: 2px; }
-.stat .value.hero { font-size: 48px; }
-.stat .delta { font-size: 13px; color: var(--ink-2); }
-.stat .delta.good { color: var(--good-text); }
+.stat .value { font-size: 30px; font-weight: 650; line-height: 1.25; }
+.stat .value small { font-size: 14px; font-weight: 500; color: var(--ink-2); margin-left: 4px; }
+.stat .foot { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+.stat .foot b { color: var(--good); font-weight: 600; }
 
-/* ---- detail charts ---- */
-.gate-tabs { margin-bottom: 8px; }
-.charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-@media (max-width: 860px) { .charts { grid-template-columns: 1fr; } }
-.chart h3 { font-size: 14px; margin: 0 0 6px; font-weight: 600; }
-.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
-.legend { display: flex; gap: 14px; font-size: 13px; color: var(--ink-2); margin: 0 0 6px; flex-wrap: wrap; }
-.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
-.legend i.line { height: 2px; vertical-align: 3px; border-radius: 1px; }
+/* chart */
+.legend { display: flex; gap: 14px; font-size: 13px; color: var(--ink-2); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; }
+.legend i.dash { height: 0; width: 14px; border-top: 2px dashed var(--ink-2); border-radius: 0; vertical-align: 3px; }
+svg { width: 100%; height: auto; display: block; overflow: visible; }
 .axis text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
-.axis line, .axis path { stroke: var(--grid); }
+.axis line { stroke: var(--grid); }
+.qrows { display: grid; grid-template-columns: 56px repeat(var(--n), minmax(0, 1fr)); gap: 3px; margin-top: 14px; font-size: 12px; }
+.qrows .lab { color: var(--ink-2); display: flex; align-items: center; }
+.qrows .c { height: 30px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; color: var(--muted); background: var(--chip); }
+.qrows .t { color: var(--muted); font-size: 11px; text-align: center; }
 
-/* ---- negotiation cards ---- */
-.who { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-@media (max-width: 860px) { .who { grid-template-columns: 1fr; } }
-.who article { border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
-.who h3 { margin: 0 0 2px; font-size: 16px; }
-.who .role { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
-.who .big { font-size: 28px; font-weight: 620; line-height: 1.2; }
-.who ul { margin: 8px 0 0; padding-left: 18px; color: var(--ink-2); font-size: 14px; }
-.who .warn { color: var(--ink); }
-.who .warn::before { content: "⚠ "; color: var(--warn); }
+/* threshold */
+.goal { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.goal .big { font-size: 20px; font-weight: 650; }
+.btn { border: 0; background: var(--ink); color: var(--surface); font: inherit; font-size: 14px; padding: 9px 16px; border-radius: 10px; cursor: pointer; }
+footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 16px; justify-content: space-between; }
 
-table.data { border-collapse: collapse; width: 100%; font-size: 13px; }
-table.data th, table.data td { border-bottom: 1px solid var(--grid); padding: 6px 8px; text-align: left; vertical-align: top; }
-table.data td.num { text-align: right; font-variant-numeric: tabular-nums; }
-details summary { cursor: pointer; color: var(--ink-2); font-size: 14px; margin-top: 12px; }
-footer { color: var(--muted); font-size: 13px; padding: 8px 0 40px; }
-ol.plan { padding-left: 20px; color: var(--ink-2); }
-
-#tip {
-  position: fixed; pointer-events: none; z-index: 10; display: none;
-  background: var(--surface); color: var(--ink); border: 1px solid var(--border);
-  border-radius: 8px; padding: 8px 10px; font-size: 13px; line-height: 1.45;
-  box-shadow: 0 4px 16px rgba(0,0,0,.12); max-width: 260px;
-}
-#tip .k { color: var(--ink-2); }
-#tip i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+#tip { position: fixed; pointer-events: none; z-index: 10; display: none; background: var(--surface); color: var(--ink);
+  border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,.14); }
+#tip i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; }
 </style>
 </head>
 <body>
 <div class="wrap">
+  <div class="top"><b>內湖錯峰協商台</b><span class="badge" id="badge"></span></div>
 
-<header class="top">
-  <h1>內科錯峰效益模擬器</h1>
-  <p>平日晨峰，誰移？移多少？省下的時間歸誰？</p>
-  <div class="banner" id="sourceBanner" hidden></div>
-</header>
+  <div class="eyebrow" id="eyebrow"></div>
+  <h1 id="headline"></h1>
 
-<!-- ① heatmap + scenario -->
-<section class="card" aria-labelledby="h-main">
-  <h2 id="h-main">晨峰熱力圖與錯峰試算 <span class="badge" id="heatBadge">真實資料 · 臺北市 VD</span></h2>
-  <p class="sub">每格代表該時段抵達通勤口的車，平均要多排隊幾分鐘。選一種公司類型、拉動滑桿，看熱點怎麼變化。</p>
+  <!-- where it jams -->
+  <div class="card">
+    <div class="row" style="margin-bottom:10px"><h2 style="margin:0">現況：哪個通勤口最塞？</h2><span class="spacer"></span><span class="muted" id="ovNote"></span></div>
+    <div class="ov" id="ov"></div>
+  </div>
 
-  <div class="main-grid">
-    <div class="controls">
-      <div class="arch-list" id="archList" role="group" aria-label="公司類型"></div>
-
-      <label for="pct">參與錯峰的員工比例 <span class="val" id="pctVal"></span></label>
-      <input id="pct" type="range" min="0" max="100" step="5" value="0">
-
-      <label for="shift">延後上班 <span class="val" id="shiftVal"></span></label>
-      <input id="shift" type="range" min="15" max="60" step="15" value="30">
-
-      <label for="rebound">回流率 <span class="val" id="reboundVal"></span></label>
-      <input id="rebound" type="range" min="0" max="60" step="30" value="30">
-      <div style="font-size:12px;color:var(--muted)">空出來的時段被其他人補上的比例。0% 是最樂觀的估計。</div>
-
-      <div class="threshold" id="threshold"></div>
-    </div>
-
-    <div>
-      <div class="toolbar">
-        <div class="seg" role="group" aria-label="日期" id="daySeg"></div>
-        <div class="seg" role="group" aria-label="情境" id="viewSeg">
-          <button type="button" data-view="base" aria-pressed="true">現況</button>
-          <button type="button" data-view="after" aria-pressed="false">錯峰後</button>
-        </div>
-        <span class="spacer"></span>
-        <button type="button" class="btn" id="playBtn">▶ 播放晨峰</button>
+  <!-- scenario -->
+  <div class="card">
+    <div class="row">
+      <div class="seg" id="modeSeg">
+        <button type="button" data-mode="split">分批錯峰</button>
+        <button type="button" data-mode="all">全體一起延後</button>
       </div>
-      <div class="heat-scroll"><div class="heat" id="heat" role="img" aria-label="通勤口與時段的延滯熱力圖"></div></div>
-      <div class="legend-ramp" id="heatLegend"></div>
-
-      <div class="stats" id="stats"></div>
+      <span class="spacer"></span>
+      <span class="muted">快速比較</span>
+      <span id="presets" class="row" style="gap:6px"></span>
+    </div>
+    <div class="ctrl-grid">
+      <div class="ctrl" id="ctrlArch">
+        <label for="arch">誰來錯峰</label>
+        <select id="arch"></select>
+      </div>
+      <div class="ctrl" id="ctrlPct">
+        <label for="pct">參與員工 <b id="pctVal"></b></label>
+        <input id="pct" type="range" min="0" max="100" step="5">
+      </div>
+      <div class="ctrl">
+        <label for="shift">延後</label>
+        <select id="shift">
+          <option value="15">15 分鐘</option><option value="30">30 分鐘</option>
+          <option value="45">45 分鐘</option><option value="60">60 分鐘</option>
+        </select>
+      </div>
     </div>
   </div>
 
-  <details>
-    <summary>以表格檢視熱力圖數值</summary>
-    <div class="heat-scroll"><table class="data" id="heatTable"></table></div>
-  </details>
-</section>
-
-<!-- ② gate detail -->
-<section class="card" aria-labelledby="h-gate">
-  <h2 id="h-gate">通勤口細節 <span class="badge">模型推算</span></h2>
-  <p class="sub">車流超過容量，就會開始排隊。錯峰把尖峰的車移到容量還有空間的時段，排隊就縮短了。</p>
-  <div class="seg gate-tabs" role="group" aria-label="通勤口" id="gateSeg"></div>
-  <div class="charts">
-    <div class="chart">
-      <h3>每 15 分鐘抵達車次與容量</h3>
-      <div class="legend"><span><i style="background:var(--s1)"></i>現況</span><span><i style="background:var(--s2)"></i>錯峰後</span><span><i class="line" style="background:var(--ink-2)"></i>容量</span></div>
-      <svg id="chartArr" viewBox="0 0 520 260" role="img" aria-label="每 15 分鐘抵達車次"></svg>
-    </div>
-    <div class="chart">
-      <h3>排隊車輛數</h3>
-      <div class="legend"><span><i class="line" style="background:var(--s1)"></i>現況</span><span><i class="line" style="background:var(--s2)"></i>錯峰後</span></div>
-      <svg id="chartQ" viewBox="0 0 520 260" role="img" aria-label="排隊車輛數"></svg>
-    </div>
+  <div class="summary">
+    <span class="main" id="sumMain"></span>
+    <span class="split" id="sumSplit"></span>
   </div>
-</section>
+  <div class="stats" id="stats"></div>
 
-<!-- ③ negotiation cards -->
-<section class="card" aria-labelledby="h-who">
-  <h2 id="h-who">協商卡：三方各自看到的數字</h2>
-  <p class="sub">同一個情境，市府、企業、員工在意的數字不一樣。</p>
-  <div class="who" id="who"></div>
-</section>
+  <div class="card">
+    <div class="row" style="margin-bottom:6px">
+      <h2 style="margin:0">需求移到哪裡，排隊就怎麼變</h2>
+      <span class="spacer"></span>
+      <div class="legend"><span><i style="background:var(--s1)"></i>原配置</span><span><i style="background:var(--s2)"></i>調整後</span><span><i class="dash"></i>容量</span></div>
+    </div>
+    <svg id="chart" viewBox="0 0 1000 240" role="img" aria-label="每 15 分鐘抵達車次與容量"></svg>
+    <div class="qrows" id="qrows"></div>
+  </div>
 
-<!-- ④ sources & plan -->
-<section class="card" aria-labelledby="h-src">
-  <h2 id="h-src">資料來源與限制</h2>
-  <table class="data">
-    <thead><tr><th>資料</th><th>來源</th><th>性質</th></tr></thead>
-    <tbody>
-      <tr><td>VD 每分鐘流量、速度、佔有率</td><td>臺北市即時交通資訊 VDLive</td><td id="srcVd">真實（兩個平日早上）</td></tr>
-      <tr><td>路段旅行時間</td><td>臺北市即時交通資訊 LiveTraffic</td><td id="srcLt">真實（兩個平日早上）</td></tr>
-      <tr><td>路徑旅行時間</td><td>Google Routes API</td><td id="srcRt">預測值</td></tr>
-      <tr><td>公司類型的人數、開車比例、上班時間</td><td>自訂</td><td>模擬</td></tr>
-      <tr><td>需求拆分、排隊延滯</td><td>Point queue 模型推算</td><td>推算</td></tr>
-    </tbody>
-  </table>
-  <details>
-    <summary>模型限制</summary>
-    <ul style="color:var(--ink-2);font-size:14px">
-      <li>每個通勤口視為獨立的單一瓶頸，不含下游回堵與通勤口之間的互相影響。</li>
-      <li>只有兩天的樣本，不代表長期平均。</li>
-      <li>未建模 capacity drop（排隊形成後流量下降），可能低估避免排隊的效益。</li>
-      <li>公司類型的參數為模擬值，實際試辦需向企業取得匿名通勤調查。</li>
-    </ul>
-  </details>
-  <h2 style="font-size:17px;margin:18px 0 4px">市府 100 天落地</h2>
-  <ol class="plan">
-    <li>第 1–30 天：交通局開放 VD 歷史序列，建立每 15 分鐘的晨峰基準線。</li>
-    <li>第 31–60 天：邀 3–5 家內科企業試辦分批上班，以匿名問卷取得通勤方式與路線。</li>
-    <li>第 61–90 天：試辦期間每天比對基準線，公開儀表板。</li>
-    <li>第 91–100 天：公布成效，結果納入企業 ESG 揭露與後續獎勵機制。</li>
-  </ol>
-</section>
+  <div class="card goal" id="goal"></div>
 
-<footer>資料處理與模型程式碼見專案 repository。<span id="genTime"></span></footer>
+  <footer>
+    <span id="foot1"></span>
+    <span>單一瓶頸模型 · 不含下游回堵與回流</span>
+  </footer>
 </div>
-
-<div id="tip" role="tooltip"></div>
+<div id="tip"></div>
 
 <script src="data/neihu-data.js"></script>
 <script>
@@ -292,444 +193,284 @@ ol.plan { padding-left: 20px; color: var(--ink-2); }
   const N = D.slots.length;
   const $ = (id) => document.getElementById(id);
   const fmt = (n, d = 0) => Number(n).toLocaleString('zh-TW', { minimumFractionDigits: d, maximumFractionDigits: d });
-  const dayKeys = Object.keys(D.days);
+  const gateById = Object.fromEntries(D.gates.map((g) => [g.id, g]));
   const archById = Object.fromEntries(D.archetypes.map((a) => [a.id, a]));
+  const day = Object.keys(D.days)[0];
+  document.documentElement.style.setProperty('--n', N);
 
-  const state = { arch: D.archetypes[0].id, pct: 20, shift: 30, rebound: 30, day: dayKeys[0], view: 'base', gate: null, play: -1 };
+  const mainGateOf = (a) => Object.entries(a.gateShare).sort((x, y) => y[1] - x[1])[0][0];
+  const PRESETS = [
+    { label: '電子廠 30%・晚 60 分', mode: 'split', arch: 'A', pct: 30, shift: 60 },
+    { label: '電子廠 30%・晚 30 分', mode: 'split', arch: 'A', pct: 30, shift: 30 },
+    { label: '全體晚 45 分', mode: 'all', arch: 'A', pct: 100, shift: 45 },
+  ];
+  const state = { mode: 'split', arch: 'A', pct: 30, shift: 60, gate: mainGateOf(archById.A) };
 
-  // Optional preset from the URL, e.g. ?arch=A&pct=30&shift=60&rebound=0&view=after&theme=light
   const qs = new URLSearchParams(location.search);
-  if (archById[qs.get('arch')]) state.arch = qs.get('arch');
-  for (const [k, lo, hi, st] of [['pct', 0, 100, 5], ['shift', 15, 60, 15], ['rebound', 0, 60, 30]]) {
-    const v = Number(qs.get(k));
-    if (qs.has(k) && v >= lo && v <= hi && v % st === 0) state[k] = v;
-  }
-  if (qs.get('view') === 'after') state.view = 'after';
-  if (dayKeys.includes(qs.get('day'))) state.day = qs.get('day');
   if (['light', 'dark'].includes(qs.get('theme'))) document.documentElement.dataset.theme = qs.get('theme');
+  if (archById[qs.get('arch')]) { state.arch = qs.get('arch'); state.gate = mainGateOf(archById[state.arch]); }
+  if (gateById[qs.get('gate')]) state.gate = qs.get('gate');
+  if (qs.get('mode') === 'all') state.mode = 'all';
+  if (qs.has('pct')) state.pct = Math.min(100, Math.max(0, Math.round(Number(qs.get('pct')) / 5) * 5)) || 0;
+  if ([15, 30, 45, 60].includes(Number(qs.get('shift')))) state.shift = Number(qs.get('shift'));
 
-  // ---------- model ----------
-  // Deterministic point queue (from v1). arrivals and capacity are vehicles per slot.
+  // ---------- model: deterministic point queue (from v1) ----------
   function simulate(arrivals, capacity) {
-    let q = 0, delay = 0, maximum = 0, queuedMin = 0;
+    let q = 0, delay = 0, maximum = 0, lastClear = null;
     const rows = [];
     for (let i = 0; i < arrivals.length || q > 1e-8; i += 1) {
       if (i > 500) throw new Error('Queue did not clear.');
       const a = arrivals[i] || 0;
-      const q0 = q;
-      const change = a - capacity;
-      const q1 = Math.max(0, q0 + change);
-      let area, busy;
+      const q0 = q, change = a - capacity, q1 = Math.max(0, q0 + change);
+      let area;
       if (change < 0 && q1 === 0) {
-        busy = q0 > 0 ? DT * q0 / (-change) : 0;
+        const busy = q0 > 0 ? DT * q0 / (-change) : 0;
         area = 0.5 * q0 * busy;
+        if (q0 > 0) lastClear = i * DT + busy;
       } else {
         area = DT * (q0 + q1) / 2;
-        busy = q0 > 0 || q1 > 0 ? DT : 0;
       }
-      delay += area;                 // vehicle-minutes
-      queuedMin += busy;
-      maximum = Math.max(maximum, q0, q1);
-      // mean wait for a vehicle arriving in this slot = mean queue / service rate
-      rows.push({ a, q0, q1, area, wait: area / capacity });
+      delay += area;
+      maximum = Math.max(maximum, q1);
+      rows.push({ a, q1, mean: area / DT, wait: area / capacity });
       q = q1;
     }
-    return { delay, maximum, queuedMin, rows };
+    return { delay, maximum, lastClear, rows };
   }
 
-  // Company vehicles crossing gate g in each slot.
-  function companyVehicles(arch, gateId) {
-    const share = arch.gateShare[gateId] || 0;
-    return arch.arrivalDist.map((p) => arch.staff * arch.driveShare * share * p);
-  }
-
-  function scenarioArrivals(base, moved, s, r) {
-    const out = base.slice();
-    for (let k = 0; k < N; k += 1) {
-      if (!moved[k]) continue;
-      const to = Math.min(N - 1, k + s);
-      out[k] -= moved[k];
-      out[to] += moved[k];
-      // rebound: part of the freed space is taken by drivers who used to leave earlier
-      const back = r * moved[k];
-      if (k > 0 && back > 0) {
-        const take = Math.min(back, out[k - 1]);
-        out[k - 1] -= take;
-        out[k] += take;
-      }
+  function scenario(gateId) {
+    const g = gateById[gateId];
+    const base = D.days[day][gateId];
+    const s = state.shift / DT;
+    let after, moved = new Array(N).fill(0);
+    if (state.mode === 'all') {
+      // everyone starts later: the whole morning slides by s slots
+      after = new Array(s).fill(0).concat(base);
+    } else {
+      const a = archById[state.arch];
+      const share = a.gateShare[gateId] || 0;
+      moved = a.arrivalDist.map((p) => a.staff * a.driveShare * share * p * state.pct / 100);
+      after = base.slice();
+      moved.forEach((m, k) => { if (m) { after[k] -= m; after[Math.min(N - 1, k + s)] += m; } });
     }
-    return out;
-  }
-
-  function runScenario(dayKey, archId, pct, shiftMin, rebound) {
-    const arch = archById[archId];
-    const s = shiftMin / DT;
-    const gates = {};
-    let tot = { base: 0, after: 0, movers: 0, movedVeh: 0 };
-    for (const g of D.gates) {
-      const base = D.days[dayKey][g.id];
-      const company = companyVehicles(arch, g.id);
-      const moved = company.map((v) => v * pct / 100);
-      const after = scenarioArrivals(base, moved, s, rebound / 100);
-      const b = simulate(base, g.capacity);
-      const a = simulate(after, g.capacity);
-      let moverSave = 0, movedVeh = 0;
-      moved.forEach((m, k) => {
-        if (!m) return;
-        const to = Math.min(N - 1, k + s);
-        moverSave += m * (b.rows[k].wait - a.rows[to].wait);
-        movedVeh += m;
-      });
-      gates[g.id] = { base, after, b, a, moved, company, moverSave, movedVeh, touched: (arch.gateShare[g.id] || 0) > 0 };
-      tot.base += b.delay; tot.after += a.delay; tot.movers += moverSave; tot.movedVeh += movedVeh;
-    }
-    const saved = tot.base - tot.after;               // vehicle-minutes
-    return {
-      arch, gates, saved,
-      savedHours: saved / 60,
-      // Signed: movers can lose time if the shift still lands inside the peak.
-      perMover: tot.movedVeh > 0 ? tot.movers / tot.movedVeh : 0,
-      othersHours: (saved - tot.movers) / 60,
-      movedVeh: tot.movedVeh,
-      basePct: tot.base > 0 ? saved / tot.base : 0,
-    };
-  }
-
-  // Smallest participation (5% steps) that cuts delay at the archetype's gates by >= target.
-  function threshold(dayKey, archId, shiftMin, rebound, target) {
-    for (let p = 5; p <= 100; p += 5) {
-      const r = runScenario(dayKey, archId, p, shiftMin, rebound);
-      let base = 0, after = 0;
-      for (const id in r.gates) if (r.gates[id].touched) { base += r.gates[id].b.delay; after += r.gates[id].a.delay; }
-      if (base > 0 && (base - after) / base >= target) return p;
-    }
-    return null;
+    const b = simulate(base, g.capacity), x = simulate(after, g.capacity);
+    let moverSave = 0, movedVeh = 0;
+    moved.forEach((m, k) => {
+      if (!m) return;
+      moverSave += m * (b.rows[k].wait - x.rows[Math.min(N - 1, k + s)].wait);
+      movedVeh += m;
+    });
+    return { g, base, after, b, x, moverSave, movedVeh };
   }
 
   // ---------- helpers ----------
+  const clock = (minFromStart) => {
+    const [h, m] = D.slots[0].split(':').map(Number);
+    const t = Math.round(h * 60 + m + minFromStart);
+    return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
+  };
+  const heat = (v, max) => {
+    const p = max > 0 ? Math.min(1, v / max) : 0;
+    return 'color-mix(in oklab, var(--s1) ' + Math.round(8 + p * 85) + '%, var(--surface))';
+  };
   const tip = $('tip');
-  function showTip(html, ev) {
+  const showTip = (html, ev) => {
     tip.innerHTML = html; tip.style.display = 'block';
-    const pad = 14, w = tip.offsetWidth, h = tip.offsetHeight;
-    let x = ev.clientX + pad, y = ev.clientY + pad;
-    if (x + w > innerWidth - 8) x = ev.clientX - w - pad;
-    if (y + h > innerHeight - 8) y = ev.clientY - h - pad;
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    let x = ev.clientX + 14, y = ev.clientY + 14;
+    if (x + w > innerWidth - 8) x = ev.clientX - w - 14;
+    if (y + h > innerHeight - 8) y = ev.clientY - h - 14;
     tip.style.left = x + 'px'; tip.style.top = y + 'px';
-  }
-  function hideTip() { tip.style.display = 'none'; }
-  const SVGNS = 'http://www.w3.org/2000/svg';
-  function el(tag, attrs, text) {
-    const n = document.createElementNS(SVGNS, tag);
+  };
+  const hideTip = () => { tip.style.display = 'none'; };
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, text) => {
+    const n = document.createElementNS(NS, tag);
     for (const k in attrs) n.setAttribute(k, attrs[k]);
     if (text != null) n.textContent = text;
     return n;
-  }
-  const BUCKETS = [0.5, 2, 4, 6, 9, 12, 16, 20];  // minutes of queue wait
-  function heatVar(w) {
-    let i = 0;
-    while (i < BUCKETS.length && w >= BUCKETS[i]) i += 1;
-    return 'var(--h' + i + ')';
-  }
-  function niceMax(v) {
+  };
+  const niceMax = (v) => {
     const p = Math.pow(10, Math.floor(Math.log10(v)));
-    for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p;
+    for (const m of [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) if (m * p >= v) return m * p;
     return 10 * p;
-  }
-  const slotEnd = (i) => {
-    const [h, m] = D.slots[i].split(':').map(Number);
-    const t = h * 60 + m + DT;
-    return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
   };
-  const addMin = (hhmm, m) => {
-    const [h, mm] = hhmm.split(':').map(Number);
-    const t = h * 60 + mm + m;
-    return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
-  };
-
-  function moverText(m) {
-    if (m >= 0.05) return '錯峰員工每人少等 ' + fmt(m, 1) + ' 分鐘';
-    if (m <= -0.05) return '錯峰員工每人反而多等 ' + fmt(-m, 1) + ' 分鐘：延後幅度不夠，仍在尖峰內';
-    return '錯峰員工自己幾乎沒有省到，效益都給了其他人';
-  }
 
   // ---------- static UI ----------
-  if (D.meta.source === 'sample') {
-    const b = $('sourceBanner');
-    b.hidden = false;
-    b.textContent = '⚠ ' + D.meta.note + '真實資料將於 10/22、10/23 收集後替換。';
-    $('heatBadge').textContent = '樣本資料';
-    $('srcVd').textContent = $('srcLt').textContent = '樣本（尚未替換）';
-    $('srcRt').textContent = '樣本（尚未替換）';
-  }
-  $('genTime').textContent = ' 資料產生時間：' + new Date(D.meta.generated).toLocaleString('zh-TW');
+  const sample = D.meta.source === 'sample';
+  $('badge').textContent = sample ? '樣本資料・非實測' : '真實資料・臺北市 VD';
+  $('foot1').textContent = (sample ? '樣本資料' : '臺北市 VD 實測') + ' · 公司類型為模擬';
 
-  const archList = $('archList');
-  D.archetypes.forEach((a) => {
+  D.archetypes.forEach((a) => $('arch').appendChild(new Option(a.name + '（' + fmt(a.staff) + ' 人）', a.id)));
+  PRESETS.forEach((p) => {
     const b = document.createElement('button');
-    b.type = 'button'; b.className = 'arch-btn'; b.dataset.id = a.id;
-    b.innerHTML = a.name + '<small>' + fmt(a.staff) + ' 人 · 開車 ' + Math.round(a.driveShare * 100) + '% · ' + a.start + ' 上班 · ' + a.zone + '</small>';
-    b.addEventListener('click', () => { state.arch = a.id; state.gate = null; if (state.view === 'base' && state.pct > 0) state.view = 'after'; update(); });
-    archList.appendChild(b);
+    b.type = 'button'; b.className = 'chip'; b.textContent = p.label;
+    b.addEventListener('click', () => {
+      Object.assign(state, { mode: p.mode, arch: p.arch, pct: p.pct, shift: p.shift, gate: mainGateOf(archById[p.arch]) });
+      update();
+    });
+    $('presets').appendChild(b);
   });
-
-  const daySeg = $('daySeg');
-  dayKeys.forEach((k) => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.dataset.day = k;
-    const d = new Date(k + 'T00:00:00');
-    b.textContent = (d.getMonth() + 1) + '/' + d.getDate() + '（' + '日一二三四五六'[d.getDay()] + '）';
-    b.addEventListener('click', () => { state.day = k; update(); });
-    daySeg.appendChild(b);
-  });
-  $('viewSeg').addEventListener('click', (e) => {
-    const v = e.target.dataset && e.target.dataset.view;
-    if (v) { state.view = v; update(); }
-  });
-
-  const bindRange = (id, key) => $(id).addEventListener('input', (e) => {
-    state[key] = Number(e.target.value);
-    if (key === 'pct' && state.pct > 0) state.view = 'after';
-    update();
-  });
-  $('pct').value = state.pct; $('shift').value = state.shift; $('rebound').value = state.rebound;
-  bindRange('pct', 'pct'); bindRange('shift', 'shift'); bindRange('rebound', 'rebound');
-
-  // heat legend
-  const hl = $('heatLegend');
-  hl.innerHTML = '<span>排隊等候（分鐘）</span>' + ['0', ...BUCKETS.map(String)].map((t, i) =>
-    '<span class="sw" style="background:var(--h' + i + ')"></span>' + (i === 0 ? '<span>&lt;0.5</span>' : i === BUCKETS.length ? '<span>' + BUCKETS[i - 1] + '+</span>' : '')).join('');
-
-  // play animation: reveal the morning slot by slot
-  let timer = null;
-  $('playBtn').addEventListener('click', () => {
-    if (timer) { clearInterval(timer); timer = null; state.play = -1; $('playBtn').textContent = '▶ 播放晨峰'; renderHeat(current); return; }
-    state.play = 0; $('playBtn').textContent = '■ 停止';
-    renderHeat(current);
-    timer = setInterval(() => {
-      state.play += 1;
-      if (state.play >= N) { clearInterval(timer); timer = null; state.play = -1; $('playBtn').textContent = '▶ 播放晨峰'; }
-      renderHeat(current);
-    }, 450);
-  });
+  $('modeSeg').addEventListener('click', (e) => { if (e.target.dataset.mode) { state.mode = e.target.dataset.mode; update(); } });
+  $('arch').addEventListener('change', (e) => { state.arch = e.target.value; state.gate = mainGateOf(archById[state.arch]); update(); });
+  $('pct').addEventListener('input', (e) => { state.pct = Number(e.target.value); update(); });
+  $('shift').addEventListener('change', (e) => { state.shift = Number(e.target.value); update(); });
 
   // ---------- render ----------
-  let current = null;
-
-  function renderHeat(r) {
-    const heat = $('heat');
-    heat.style.gridTemplateColumns = 'max-content repeat(' + N + ', minmax(30px, 1fr)) max-content';
-    heat.innerHTML = '';
-    const showAfter = state.view === 'after';
-    for (const g of D.gates) {
-      const gr = r.gates[g.id];
-      const rows = (showAfter ? gr.a : gr.b).rows;
-      const lab = document.createElement('div');
-      lab.className = 'rowlab';
-      lab.innerHTML = g.name + '<small>' + g.dir + '</small>';
-      heat.appendChild(lab);
-      for (let i = 0; i < N; i += 1) {
-        const c = document.createElement('div');
-        c.className = 'cell';
-        const w = rows[i].wait;
-        c.style.background = heatVar(w);
-        if (state.play >= 0) {
-          if (i > state.play) c.classList.add('future');
-          if (i === state.play) c.classList.add('now');
-        }
-        if (showAfter && gr.moved[i] > 0.5) c.classList.add('hit');
-        c.addEventListener('mousemove', (ev) => {
-          const wb = gr.b.rows[i].wait, wa = gr.a.rows[i].wait;
-          showTip('<b>' + g.name + '</b>　' + D.slots[i] + '–' + slotEnd(i) +
-            '<br><span class="k">抵達</span> ' + fmt(gr.base[i]) + ' 車（容量 ' + fmt(g.capacity) + '）' +
-            '<br><i style="background:var(--s1)"></i><span class="k">現況等候</span> ' + fmt(wb, 1) + ' 分' +
-            '<br><i style="background:var(--s2)"></i><span class="k">錯峰後</span> ' + fmt(wa, 1) + ' 分' +
-            (gr.moved[i] > 0.5 ? '<br><span class="k">本時段移出</span> ' + fmt(gr.moved[i]) + ' 車' : ''), ev);
-        });
-        c.addEventListener('mouseleave', hideTip);
-        heat.appendChild(c);
-      }
-      const d = document.createElement('div');
-      d.className = 'delta';
-      const diff = (gr.b.delay - gr.a.delay) / 60;
-      d.textContent = gr.touched && diff > 0.05 ? '−' + fmt(diff, 1) + ' 車小時' : '';
-      heat.appendChild(d);
-    }
-    heat.appendChild(document.createElement('div'));
-    for (let i = 0; i < N; i += 1) {
-      const t = document.createElement('div');
-      t.className = 'collab';
-      t.textContent = D.slots[i].endsWith(':00') || D.slots[i].endsWith(':30') ? D.slots[i] : '';
-      heat.appendChild(t);
-    }
-    heat.appendChild(document.createElement('div'));
-  }
-
-  function renderHeatTable(r) {
-    let h = '<thead><tr><th>通勤口</th>' + D.slots.map((s) => '<th>' + s + '</th>').join('') + '</tr></thead><tbody>';
-    for (const g of D.gates) {
-      const gr = r.gates[g.id];
-      h += '<tr><td>' + g.name + '（現況）</td>' + gr.b.rows.slice(0, N).map((x) => '<td class="num">' + fmt(x.wait, 1) + '</td>').join('') + '</tr>';
-      if (gr.touched) h += '<tr><td>' + g.name + '（錯峰後）</td>' + gr.a.rows.slice(0, N).map((x) => '<td class="num">' + fmt(x.wait, 1) + '</td>').join('') + '</tr>';
-    }
-    $('heatTable').innerHTML = h + '</tbody>';
-  }
-
-  function renderStats(r) {
-    const mainGate = Object.entries(r.arch.gateShare).sort((a, b) => b[1] - a[1])[0][0];
-    const g = r.gates[mainGate];
-    const gName = D.gates.find((x) => x.id === mainGate).name;
-    const qb = g.b.queuedMin, qa = g.a.queuedMin;
-    $('stats').innerHTML =
-      '<div class="stat"><div class="label">所有用路人每天共省下</div><div class="value hero">' + fmt(Math.max(0, r.savedHours), 0) + ' <span style="font-size:20px">車小時</span></div>' +
-        '<div class="delta' + (r.basePct > 0 ? ' good' : '') + '">占這 5 個通勤口總延滯的 ' + fmt(r.basePct * 100, 0) + '%</div></div>' +
-      '<div class="stat"><div class="label">其他用路人共省</div><div class="value">' + fmt(r.othersHours, 0) + ' 車小時</div>' +
-        '<div class="delta' + (r.perMover >= 0.05 ? ' good' : '') + '">' + moverText(r.perMover) + '</div></div>' +
-      '<div class="stat"><div class="label">' + gName + '排隊持續時間</div><div class="value">' + fmt(qa) + ' 分</div>' +
-        '<div class="delta' + (qa < qb ? ' good' : '') + '">現況 ' + fmt(qb) + ' 分' + (qa < qb ? '，縮短 ' + fmt(qb - qa) + ' 分' : '') + '</div></div>';
-
-    const t = threshold(state.day, state.arch, state.shift, state.rebound, 0.25);
-    $('threshold').innerHTML = '<b>試辦門檻</b><br>要讓「' + r.arch.name + '」使用的通勤口總延滯減少 25%，' +
-      (t == null ? '即使 100% 員工參與也做不到，需要多家企業一起錯峰。' : '至少要 <b>' + t + '%</b> 員工延後 ' + state.shift + ' 分鐘。');
-  }
-
-  function renderGateTabs(r) {
-    const touched = Object.keys(r.arch.gateShare);
-    if (!state.gate || !touched.includes(state.gate)) state.gate = touched[0];
-    const seg = $('gateSeg');
-    seg.innerHTML = '';
-    for (const id of touched) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = D.gates.find((x) => x.id === id).name;
-      b.setAttribute('aria-pressed', String(id === state.gate));
-      b.addEventListener('click', () => { state.gate = id; update(); });
-      seg.appendChild(b);
-    }
-  }
-
-  function axes(svg, m, w, h, yMax, yTicks) {
-    const ax = el('g', { class: 'axis' });
-    for (let i = 0; i <= yTicks; i += 1) {
-      const v = yMax * i / yTicks;
-      const y = m.t + h - h * i / yTicks;
-      ax.appendChild(el('line', { x1: m.l, x2: m.l + w, y1: y, y2: y, 'stroke-width': 1 }));
-      ax.appendChild(el('text', { x: m.l - 6, y: y + 4, 'text-anchor': 'end' }, v >= 1000 ? fmt(v / 1000, 1) + 'K' : fmt(v)));
-    }
-    const step = w / N;
-    for (let i = 0; i < N; i += 2) {
-      ax.appendChild(el('text', { x: m.l + step * i + step / 2, y: m.t + h + 16, 'text-anchor': 'middle' }, D.slots[i]));
-    }
-    svg.appendChild(ax);
-  }
-
-  function hoverBands(svg, m, w, h, onMove) {
-    const step = w / N;
-    const cross = el('line', { y1: m.t, y2: m.t + h, stroke: 'var(--axis)', 'stroke-width': 1, visibility: 'hidden' });
-    svg.appendChild(cross);
-    for (let i = 0; i < N; i += 1) {
-      const r = el('rect', { x: m.l + step * i, y: m.t, width: step, height: h, fill: 'transparent' });
-      r.addEventListener('mousemove', (ev) => {
-        const x = m.l + step * i + step / 2;
-        cross.setAttribute('x1', x); cross.setAttribute('x2', x); cross.setAttribute('visibility', 'visible');
-        onMove(i, ev);
+  function renderOverview() {
+    const ov = $('ov');
+    ov.innerHTML = '';
+    const all = D.gates.map((g) => ({ g, r: simulate(D.days[day][g.id], g.capacity) }));
+    const max = Math.max(...all.flatMap((o) => o.r.rows.slice(0, N).map((x) => x.wait)));
+    const used = state.mode === 'split' ? archById[state.arch].gateShare : {};
+    $('ovNote').textContent = state.mode === 'split' ? '● ' + archById[state.arch].name + '員工會經過・點選切換' : '點選切換通勤口';
+    for (const { g, r } of all) {
+      const pick = () => { state.gate = g.id; update(); };
+      const name = document.createElement('button');
+      name.type = 'button';
+      name.className = 'name' + (g.id === state.gate ? ' on' : '');
+      name.textContent = g.name + (used[g.id] ? ' ●' : '');
+      name.title = used[g.id] ? '這家公司的員工會經過這裡' : '';
+      name.addEventListener('click', pick);
+      const strip = document.createElement('div');
+      strip.className = 'strip';
+      strip.addEventListener('click', pick);
+      r.rows.slice(0, N).forEach((x, i) => {
+        const s = document.createElement('span');
+        s.style.background = heat(x.wait, max);
+        s.addEventListener('mousemove', (ev) => showTip('<b>' + g.name + '</b> ' + D.slots[i] + '<br>平均多等 ' + fmt(x.wait, 1) + ' 分鐘', ev));
+        s.addEventListener('mouseleave', hideTip);
+        strip.appendChild(s);
       });
-      r.addEventListener('mouseleave', () => { cross.setAttribute('visibility', 'hidden'); hideTip(); });
-      svg.appendChild(r);
+      const worst = r.rows.slice(0, N).reduce((m, x, i) => (x.wait > m.w ? { w: x.wait, i } : m), { w: 0, i: 0 });
+      const peak = document.createElement('span');
+      peak.className = 'peak';
+      peak.textContent = worst.w >= 0.5 ? '最塞 ' + D.slots[worst.i] + '・多等 ' + fmt(worst.w, 0) + ' 分' : '順暢';
+      ov.append(name, strip, peak);
     }
+    const ticks = document.createElement('div');
+    ticks.className = 'ticks';
+    ticks.innerHTML = [0, 5, 9, 13].map((i) => '<span>' + D.slots[i] + '</span>').join('');
+    ov.append(document.createElement('span'), ticks, document.createElement('span'));
   }
 
-  function renderCharts(r) {
-    const g = D.gates.find((x) => x.id === state.gate);
-    const gr = r.gates[state.gate];
-    const m = { l: 44, r: 8, t: 10, b: 26 }, W = 520, H = 260, w = W - m.l - m.r, h = H - m.t - m.b;
-    const step = w / N;
-
-    // arrivals vs capacity (grouped columns)
-    const s1 = $('chartArr'); s1.innerHTML = '';
-    const yMax = niceMax(Math.max(g.capacity, ...gr.base, ...gr.after) * 1.05);
+  function renderChart(r) {
+    const svg = $('chart');
+    svg.innerHTML = '';
+    const m = { l: 40, r: 10, t: 10, b: 24 }, W = 1000, H = 240, w = W - m.l - m.r, h = H - m.t - m.b, step = w / N;
+    const yMax = niceMax(Math.max(r.g.capacity, ...r.base, ...r.after.slice(0, N)) * 1.08);
     const y = (v) => m.t + h - h * v / yMax;
-    axes(s1, m, w, h, yMax, 4);
-    const bw = Math.min(10, (step - 6) / 2);
-    const colPath = (x, v) => {
-      const top = y(v), base = m.t + h, rr = Math.min(4, (base - top) / 2, bw / 2);
-      return 'M' + x + ',' + base + 'V' + (top + rr) + 'Q' + x + ',' + top + ' ' + (x + rr) + ',' + top +
-        'H' + (x + bw - rr) + 'Q' + (x + bw) + ',' + top + ' ' + (x + bw) + ',' + (top + rr) + 'V' + base + 'Z';
+    const ax = el('g', { class: 'axis' });
+    for (let i = 0; i <= 4; i += 1) {
+      const v = yMax * i / 4, yy = y(v);
+      ax.appendChild(el('line', { x1: m.l, x2: m.l + w, y1: yy, y2: yy }));
+      ax.appendChild(el('text', { x: m.l - 6, y: yy + 4, 'text-anchor': 'end' }, v >= 1000 ? fmt(v / 1000, 1) + 'K' : fmt(v)));
+    }
+    for (let i = 1; i < N; i += 4) ax.appendChild(el('text', { x: m.l + step * i + step / 2, y: H - 4, 'text-anchor': 'middle' }, D.slots[i]));
+    svg.appendChild(ax);
+    const bw = Math.min(22, step / 2 - 4);
+    const col = (x, v, fill) => {
+      const top = y(v), base = m.t + h, rr = Math.min(4, (base - top) / 2);
+      svg.appendChild(el('path', { fill, d: 'M' + x + ',' + base + 'V' + (top + rr) + 'Q' + x + ',' + top + ' ' + (x + rr) + ',' + top +
+        'H' + (x + bw - rr) + 'Q' + (x + bw) + ',' + top + ' ' + (x + bw) + ',' + (top + rr) + 'V' + base + 'Z' }));
     };
     for (let i = 0; i < N; i += 1) {
       const cx = m.l + step * i + step / 2;
-      s1.appendChild(el('path', { d: colPath(cx - bw - 1, gr.base[i]), fill: 'var(--s1)' }));
-      s1.appendChild(el('path', { d: colPath(cx + 1, gr.after[i]), fill: 'var(--s2)' }));
+      col(cx - bw - 1, r.base[i], 'var(--s1)');
+      col(cx + 1, r.after[i] || 0, 'var(--s2)');
+      const hit = el('rect', { x: m.l + step * i, y: m.t, width: step, height: h, fill: 'transparent' });
+      hit.addEventListener('mousemove', (ev) => showTip('<b>' + D.slots[i] + '</b><br><i style="background:var(--s1)"></i>原配置 ' + fmt(r.base[i]) +
+        ' 車<br><i style="background:var(--s2)"></i>調整後 ' + fmt(r.after[i] || 0) + ' 車', ev));
+      hit.addEventListener('mouseleave', hideTip);
+      svg.appendChild(hit);
     }
-    s1.appendChild(el('line', { x1: m.l, x2: m.l + w, y1: y(g.capacity), y2: y(g.capacity), stroke: 'var(--ink-2)', 'stroke-width': 1.5 }));
-    s1.appendChild(el('text', { x: m.l + w, y: y(g.capacity) - 5, 'text-anchor': 'end', fill: 'var(--ink-2)', 'font-size': 11 }, '容量 ' + fmt(g.capacity) + ' 車／15 分'));
-    hoverBands(s1, m, w, h, (i, ev) => showTip('<b>' + g.name + '</b>　' + D.slots[i] + '–' + slotEnd(i) +
-      '<br><i style="background:var(--s1)"></i><span class="k">現況</span> ' + fmt(gr.base[i]) + ' 車' +
-      '<br><i style="background:var(--s2)"></i><span class="k">錯峰後</span> ' + fmt(gr.after[i]) + ' 車' +
-      '<br><span class="k">容量</span> ' + fmt(g.capacity) + ' 車', ev));
+    svg.appendChild(el('line', { x1: m.l, x2: m.l + w, y1: y(r.g.capacity), y2: y(r.g.capacity), stroke: 'var(--ink-2)', 'stroke-width': 1.5, 'stroke-dasharray': '6 4' }));
+    svg.appendChild(el('text', { x: m.l + w, y: y(r.g.capacity) - 6, 'text-anchor': 'end', fill: 'var(--ink-2)', 'font-size': 12 }, '容量 ' + fmt(r.g.capacity)));
 
-    // queue length (lines, value at slot end)
-    const s2 = $('chartQ'); s2.innerHTML = '';
-    const qb = gr.b.rows.slice(0, N).map((x) => x.q1), qa = gr.a.rows.slice(0, N).map((x) => x.q1);
-    const qMax = niceMax(Math.max(10, ...qb, ...qa) * 1.05);
-    const yq = (v) => m.t + h - h * v / qMax;
-    axes(s2, m, w, h, qMax, 4);
-    const line = (vals, color) => s2.appendChild(el('path', {
-      d: vals.map((v, i) => (i ? 'L' : 'M') + (m.l + step * i + step / 2) + ',' + yq(v)).join(''),
-      fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round',
-    }));
-    line(qb, 'var(--s1)'); line(qa, 'var(--s2)');
-    const iMax = qb.indexOf(Math.max(...qb));
-    s2.appendChild(el('circle', { cx: m.l + step * iMax + step / 2, cy: yq(qb[iMax]), r: 4, fill: 'var(--s1)', stroke: 'var(--surface)', 'stroke-width': 2 }));
-    s2.appendChild(el('text', { x: m.l + step * iMax + step / 2 + 8, y: yq(qb[iMax]) - 6, fill: 'var(--ink-2)', 'font-size': 11 }, '最長 ' + fmt(qb[iMax]) + ' 車'));
-    hoverBands(s2, m, w, h, (i, ev) => showTip('<b>' + g.name + '</b>　' + slotEnd(i) + ' 時' +
-      '<br><i style="background:var(--s1)"></i><span class="k">現況排隊</span> ' + fmt(qb[i]) + ' 車' +
-      '<br><i style="background:var(--s2)"></i><span class="k">錯峰後</span> ' + fmt(qa[i]) + ' 車', ev));
-  }
-
-  function renderWho(r) {
-    const a = r.arch;
-    const people = Math.round(a.staff * state.pct / 100);
-    const route = D.routes.find((x) => x.origin === a.origin && x.archetype === a.id);
-    const dIdx = (t) => route.departs.indexOf(t);
-    const later = addMin(a.typicalDepart, state.shift);
-    const d0 = route.durationMin[dIdx(a.typicalDepart)];
-    const d1 = dIdx(later) >= 0 ? route.durationMin[dIdx(later)] : null;
-    const newStart = addMin(a.start, state.shift);
-    const coreOk = newStart <= '10:00';
-    $('who').innerHTML =
-      '<article><h3>市府</h3><div class="role">在意整體壅塞</div>' +
-        '<div class="big">' + fmt(Math.max(0, r.savedHours), 0) + ' 車小時／天</div>' +
-        '<ul><li>一年約 ' + fmt(Math.max(0, r.savedHours) * 250, 0) + ' 車小時（以 250 個工作天計）</li>' +
-        '<li>沒有改變上班時間的用路人共省 ' + fmt(r.othersHours, 0) + ' 車小時</li></ul></article>' +
-      '<article><h3>企業：' + a.name + '</h3><div class="role">在意出勤與營運</div>' +
-        '<div class="big">' + fmt(people) + ' 人改 ' + newStart + ' 上班</div>' +
-        '<ul><li>通勤口排隊：' + moverText(r.perMover) + '</li>' +
-        '<li' + (coreOk ? '' : ' class="warn"') + '>' + (coreOk ? '10:00 前全員到班，核心時段不受影響' : '上班時間晚於 10:00，需調整核心時段') + '</li>' +
-        '<li>可列入 ESG 揭露：配合錯峰帶來的外部效益</li></ul></article>' +
-      '<article><h3>員工</h3><div class="role">在意通勤時間 · 從' + a.origin + '出發</div>' +
-        (d1 == null ? '<div class="big">—</div><ul><li>超出路徑資料的時間範圍</li></ul>' :
-        '<div class="big">' + (d0 > d1 ? '路上少 ' + (d0 - d1) + ' 分鐘' : d0 < d1 ? '路上多 ' + (d1 - d0) + ' 分鐘' : '路上時間不變') + '</div>' +
-        '<ul><li>' + a.typicalDepart + ' 出發要 ' + d0 + ' 分鐘</li>' +
-        '<li>' + later + ' 出發要 ' + d1 + ' 分鐘</li>' +
-        '<li>晚 ' + state.shift + ' 分出門，到公司時間晚 ' + (state.shift - (d0 - d1)) + ' 分</li></ul>') +
-        '<div style="font-size:12px;color:var(--muted);margin-top:8px">路徑時間為 ' + (D.meta.source === 'sample' ? '樣本資料' : 'Google Routes 預測值') + '</div>' +
-      '</article>';
+    // average queue per slot, both rows always visible
+    const qb = r.b.rows.slice(0, N).map((x) => x.mean), qa = r.x.rows.slice(0, N).map((x) => x.mean);
+    const max = Math.max(1, ...qb, ...qa);
+    let html = '';
+    for (const [lab, vals] of [['原配置', qb], ['調整後', qa]]) {
+      html += '<div class="lab">' + lab + '</div>';
+      for (const v of vals) {
+        const strong = v / max > 0.55;
+        html += '<div class="c" style="' + (v >= 1 ? 'background:' + heat(v, max) + ';color:' + (strong ? '#fff' : 'var(--ink)') : '') + '">' + (v >= 1 ? fmt(v) : '·') + '</div>';
+      }
+    }
+    html += '<div></div>' + D.slots.map((s, i) => '<div class="t">' + (i % 4 === 1 ? s : '') + '</div>').join('');
+    $('qrows').innerHTML = html;
   }
 
   function update() {
-    $('pctVal').textContent = state.pct + '%';
-    $('shiftVal').textContent = state.shift + ' 分鐘';
-    $('reboundVal').textContent = state.rebound + '%';
-    document.querySelectorAll('.arch-btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === state.arch)));
-    document.querySelectorAll('#daySeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.day === state.day)));
-    document.querySelectorAll('#viewSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
-    current = runScenario(state.day, state.arch, state.pct, state.shift, state.rebound);
-    renderHeat(current);
-    renderHeatTable(current);
-    renderStats(current);
-    renderGateTabs(current);
-    renderCharts(current);
-    renderWho(current);
+    const a = archById[state.arch];
+    const r = scenario(state.gate);
+    const split = state.mode === 'split';
+
+    document.querySelectorAll('#modeSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === state.mode)));
+    $('ctrlArch').setAttribute('aria-disabled', String(!split));
+    $('ctrlPct').setAttribute('aria-disabled', String(!split));
+    $('arch').value = state.arch;
+    $('pct').value = state.pct;
+    $('pctVal').textContent = state.pct + '%・' + fmt(a.staff * state.pct / 100) + ' 人';
+    $('shift').value = state.shift;
+
+    const total = r.base.reduce((s, v) => s + v, 0);
+    $('eyebrow').textContent = r.g.name + '・' + r.g.dir + '・平日晨峰';
+    $('headline').textContent = '同樣 ' + fmt(total) + ' 車次，改變的是等待。';
+
+    const cut = r.b.delay > 0 ? (r.b.delay - r.x.delay) / r.b.delay : 0;
+    const who = split ? a.name + ' ' + state.pct + '% 員工晚 ' + state.shift + ' 分' : '全體晚 ' + state.shift + ' 分';
+    $('sumMain').textContent = who + '，' + (Math.abs(cut) < 0.005 ? '等待沒有減少。' : '累積等待' + (cut > 0 ? '減少 ' : '增加 ') + fmt(Math.abs(cut) * 100, 0) + '%。');
+    if (!split) {
+      $('sumSplit').textContent = '塞車只是整段往後移。';
+    } else if (r.movedVeh < 1) {
+      $('sumSplit').textContent = '這家公司的員工不經過' + r.g.name + '。';
+    } else {
+      const per = r.moverSave / r.movedVeh, others = (r.b.delay - r.x.delay - r.moverSave) / 60;
+      $('sumSplit').textContent = '其他用路人省 ' + fmt(others, 0) + ' 車小時・錯峰員工每人' +
+        (per >= 0.05 ? '省 ' + fmt(per, 1) + ' 分' : per <= -0.05 ? '反而多等 ' + fmt(-per, 1) + ' 分' : '沒省到');
+    }
+
+    const clearB = r.b.lastClear, clearX = r.x.lastClear;
+    const stat = (label, value, unit, before, change) =>
+      '<div class="stat"><div class="label">' + label + '</div><div class="value">' + value + (unit ? '<small>' + unit + '</small>' : '') +
+      '</div><div class="foot"><span>原配置 ' + before + '</span>' + (change ? '<b' + (change.startsWith('延後') ? ' style="color:var(--ink-2)"' : '') + '>' + change + '</b>' : '') + '</div></div>';
+    const dh = (r.b.delay - r.x.delay) / 60, dm = r.b.maximum - r.x.maximum;
+    $('stats').innerHTML =
+      stat('累積排隊', fmt(r.x.delay / 60, 1), '車小時', fmt(r.b.delay / 60, 1), dh > 0.05 ? '減少 ' + fmt(cut * 100, 0) + '%' : '') +
+      stat('最大排隊', fmt(r.x.maximum), '車', fmt(r.b.maximum), dm >= 1 ? '減少 ' + fmt(dm) + ' 車' : '') +
+      stat('排隊結束', clearX == null ? '無排隊' : clock(clearX), '', clearB == null ? '無排隊' : clock(clearB),
+        clearB != null && clearX != null && clearX < clearB - 0.5 ? '提前 ' + fmt(clearB - clearX) + ' 分' :
+        clearB != null && clearX != null && clearX > clearB + 0.5 ? '延後 ' + fmt(clearX - clearB) + ' 分' : '');
+
+    renderOverview();
+    renderChart(r);
+    renderGoal(a);
+  }
+
+  // Smallest participation that halves cumulative wait at the selected gate.
+  function renderGoal(a) {
+    const goal = $('goal');
+    if (state.mode !== 'split' || !(a.gateShare[state.gate] > 0)) {
+      goal.innerHTML = '<div><div class="muted">試辦門檻</div><div class="big">切到「分批錯峰」，並選擇會經過' + gateById[state.gate].name + '的公司</div></div>';
+      return;
+    }
+    const keep = state.pct;
+    let found = null;
+    for (let p = 5; p <= 100 && found == null; p += 5) {
+      state.pct = p;
+      const r = scenario(state.gate);
+      if (r.b.delay > 0 && (r.b.delay - r.x.delay) / r.b.delay >= 0.5) found = p;
+    }
+    state.pct = keep;
+    if (found == null) {
+      goal.innerHTML = '<div><div class="muted">試辦門檻・讓' + gateById[state.gate].name + '等待減半</div><div class="big">' + a.name + '單獨做不到，需要其他公司一起錯峰</div></div>';
+      return;
+    }
+    goal.innerHTML = '<div><div class="muted">試辦門檻・讓' + gateById[state.gate].name + '等待減半</div><div class="big">' + a.name + '需要 ' + found + '% 員工晚 ' + state.shift + ' 分</div></div>' +
+      '<span class="spacer"></span><button class="btn" type="button" id="tryGoal">試試這個配置</button>';
+    $('tryGoal').addEventListener('click', () => { state.pct = found; update(); });
   }
 
   update();
