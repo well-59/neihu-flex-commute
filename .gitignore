@@ -2,3 +2,8 @@
 /data/
 node_modules/
 .env
+
+# Local OS and Python artifacts
+.DS_Store
+__pycache__/
+*.pyc

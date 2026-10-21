@@ -1,0 +1,10 @@
+{
+  "source": "https://tcgbusfs.blob.core.windows.net/blobtisv/GetVDDATA.xml",
+  "retrievedAt": "2026-10-19T15:31:27.730330+00:00",
+  "exchangeTime": "2024/11/14T16:46:02",
+  "bytes": 502557,
+  "sha256": "c151a6cd7bbfb6e5758db022a0f26d7cd50a9b6b393b2f05b3841d22c52a03ee",
+  "deviceCount": 724,
+  "status": "STALE_NOT_FOR_MORNING_ANALYSIS",
+  "note": "ExchangeTime 原樣保留；來源未在此欄提供 UTC offset。下載成功不代表資料新鮮。"
+}

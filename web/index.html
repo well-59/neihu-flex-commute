@@ -123,9 +123,16 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
   <div class="eyebrow" id="eyebrow"></div>
   <h1 id="headline"></h1>
 
+  <section class="card" aria-label="實測依據">
+    <div class="row"><h2>分流，先找出需求集中在哪裡</h2><span class="badge">2025 官方路口調查</span></div>
+    <p>同日 4 個路口的最高流量，落在 <b>3 個不同時段</b>；港墘 × 瑞光的 08 時車流比 07 時增加 <b>49.6%</b>。</p>
+    <p class="muted">觀測支持按地點與時窗討論。尚不能證明企業到班造成集中，也不能由通過量判定壅塞或剩餘容量。</p>
+    <a href="evidence/index.html">查看實測圖表、車種與原始來源 →</a>
+  </section>
+
   <!-- where it jams -->
   <div class="card">
-    <div class="row" style="margin-bottom:10px"><h2 style="margin:0">現況：哪個通勤口最塞？</h2><span class="spacer"></span><span class="muted" id="ovNote"></span></div>
+    <div class="row" style="margin-bottom:10px"><h2 style="margin:0">模型情境：哪個通勤口等待較長？</h2><span class="spacer"></span><span class="muted" id="ovNote"></span></div>
     <div class="ov" id="ov"></div>
   </div>
 
@@ -179,7 +186,7 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
 
   <footer>
     <span id="foot1"></span>
-    <span>單一瓶頸模型 · 不含下游回堵與回流</span>
+    <span>各通勤口獨立模型 · 未校準 · 不含下游回堵與回流；每人效益假設一人一車</span>
   </footer>
 </div>
 <div id="tip"></div>
@@ -298,8 +305,8 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
 
   // ---------- static UI ----------
   const sample = D.meta.source === 'sample';
-  $('badge').textContent = sample ? '樣本資料・非實測' : '真實資料・臺北市 VD';
-  $('foot1').textContent = (sample ? '樣本資料' : '臺北市 VD 實測') + ' · 公司類型為模擬';
+  $('badge').textContent = sample ? '樣本資料・非實測' : '資料已替換・校準狀態須另驗證';
+  $('foot1').textContent = (sample ? '樣本資料' : '模型估計') + ' · 公司類型為模擬';
 
   D.archetypes.forEach((a) => $('arch').appendChild(new Option(a.name + '（' + fmt(a.staff) + ' 人）', a.id)));
   PRESETS.forEach((p) => {
@@ -438,7 +445,7 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
       '</div><div class="foot"><span>原配置 ' + before + '</span>' + (change ? '<b' + (change.startsWith('延後') ? ' style="color:var(--ink-2)"' : '') + '>' + change + '</b>' : '') + '</div></div>';
     const dh = (r.b.delay - r.x.delay) / 60, dm = r.b.maximum - r.x.maximum;
     $('stats').innerHTML =
-      stat('累積排隊', fmt(r.x.delay / 60, 1), '車小時', fmt(r.b.delay / 60, 1), dh > 0.05 ? '減少 ' + fmt(cut * 100, 0) + '%' : '') +
+      stat('總排隊等待量', fmt(r.x.delay / 60, 1), '車小時', fmt(r.b.delay / 60, 1), dh > 0.05 ? '減少 ' + fmt(cut * 100, 0) + '%' : '') +
       stat('最大排隊', fmt(r.x.maximum), '車', fmt(r.b.maximum), dm >= 1 ? '減少 ' + fmt(dm) + ' 車' : '') +
       stat('排隊結束', clearX == null ? '無排隊' : clock(clearX), '', clearB == null ? '無排隊' : clock(clearB),
         clearB != null && clearX != null && clearX < clearB - 0.5 ? '提前 ' + fmt(clearB - clearX) + ' 分' :
@@ -453,7 +460,7 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
   function renderGoal(a) {
     const goal = $('goal');
     if (state.mode !== 'split' || !(a.gateShare[state.gate] > 0)) {
-      goal.innerHTML = '<div><div class="muted">試辦門檻</div><div class="big">切到「分批錯峰」，並選擇會經過' + gateById[state.gate].name + '的公司</div></div>';
+      goal.innerHTML = '<div><div class="muted">模型配置探索</div><div class="big">切到「分批錯峰」，並選擇會經過' + gateById[state.gate].name + '的公司</div></div>';
       return;
     }
     const keep = state.pct;
@@ -465,10 +472,10 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
     }
     state.pct = keep;
     if (found == null) {
-      goal.innerHTML = '<div><div class="muted">試辦門檻・讓' + gateById[state.gate].name + '等待減半</div><div class="big">' + a.name + '單獨做不到，需要其他公司一起錯峰</div></div>';
+      goal.innerHTML = '<div><div class="muted">模型配置探索・讓' + gateById[state.gate].name + '等待減半</div><div class="big">' + a.name + '在目前假設與搜尋範圍內未達減半目標</div></div>';
       return;
     }
-    goal.innerHTML = '<div><div class="muted">試辦門檻・讓' + gateById[state.gate].name + '等待減半</div><div class="big">' + a.name + '需要 ' + found + '% 員工晚 ' + state.shift + ' 分</div></div>' +
+    goal.innerHTML = '<div><div class="muted">模型配置探索・讓' + gateById[state.gate].name + '等待減半</div><div class="big">' + a.name + '需要 ' + found + '% 員工晚 ' + state.shift + ' 分</div></div>' +
       '<span class="spacer"></span><button class="btn" type="button" id="tryGoal">試試這個配置</button>';
     $('tryGoal').addEventListener('click', () => { state.pct = found; update(); });
   }
