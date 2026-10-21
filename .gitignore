@@ -1,0 +1,4 @@
+# Collected traffic data stays local; processed JSON for the page goes in web/data/
+/data/
+node_modules/
+.env
