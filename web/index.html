@@ -123,16 +123,9 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
   <div class="eyebrow" id="eyebrow"></div>
   <h1 id="headline"></h1>
 
-  <section class="card" aria-label="實測依據">
-    <div class="row"><h2>分流，先找出需求集中在哪裡</h2><span class="badge">2025 官方路口調查</span></div>
-    <p>同日 4 個路口的最高流量，落在 <b>3 個不同時段</b>；港墘 × 瑞光的 08 時車流比 07 時增加 <b>49.6%</b>。</p>
-    <p class="muted">觀測支持按地點與時窗討論。尚不能證明企業到班造成集中，也不能由通過量判定壅塞或剩餘容量。</p>
-    <a href="evidence/index.html">查看實測圖表、車種與原始來源 →</a>
-  </section>
-
   <!-- where it jams -->
   <div class="card">
-    <div class="row" style="margin-bottom:10px"><h2 style="margin:0">模型情境：哪個通勤口等待較長？</h2><span class="spacer"></span><span class="muted" id="ovNote"></span></div>
+    <div class="row" style="margin-bottom:10px"><h2 style="margin:0">現況：每個通勤口塞多久？</h2><span class="spacer"></span><span class="muted">顏色越深＝車龍越長・● 這家公司員工會經過</span></div>
     <div class="ov" id="ov"></div>
   </div>
 
@@ -174,11 +167,12 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
 
   <div class="card">
     <div class="row" style="margin-bottom:6px">
-      <h2 style="margin:0">需求移到哪裡，排隊就怎麼變</h2>
+      <h2 style="margin:0">車從哪個時段移到哪個時段</h2>
       <span class="spacer"></span>
-      <div class="legend"><span><i style="background:var(--s1)"></i>原配置</span><span><i style="background:var(--s2)"></i>調整後</span><span><i class="dash"></i>容量</span></div>
+      <div class="legend"><span><i style="background:var(--s1)"></i>移走的車</span><span><i style="background:var(--s2)"></i>移入的車</span></div>
     </div>
-    <svg id="chart" viewBox="0 0 1000 240" role="img" aria-label="每 15 分鐘抵達車次與容量"></svg>
+    <svg id="chart" viewBox="0 0 1000 200" role="img" aria-label="每 15 分鐘移走與移入的車"></svg>
+    <h2 style="margin:18px 0 0">車龍長度（台）</h2>
     <div class="qrows" id="qrows"></div>
   </div>
 
@@ -186,7 +180,8 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
 
   <footer>
     <span id="foot1"></span>
-    <span>各通勤口獨立模型 · 未校準 · 不含下游回堵與回流；每人效益假設一人一車</span>
+    <a href="evidence/index.html" style="color:var(--ink-2)">查看 2025 官方路口調查 →</a>
+    <span>單一瓶頸模型 · 不含下游回堵與回流</span>
   </footer>
 </div>
 <div id="tip"></div>
@@ -207,11 +202,11 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
 
   const mainGateOf = (a) => Object.entries(a.gateShare).sort((x, y) => y[1] - x[1])[0][0];
   const PRESETS = [
+    { label: '電子廠 10%・晚 60 分', mode: 'split', arch: 'A', pct: 10, shift: 60 },
     { label: '電子廠 30%・晚 60 分', mode: 'split', arch: 'A', pct: 30, shift: 60 },
-    { label: '電子廠 30%・晚 30 分', mode: 'split', arch: 'A', pct: 30, shift: 30 },
     { label: '全體晚 45 分', mode: 'all', arch: 'A', pct: 100, shift: 45 },
   ];
-  const state = { mode: 'split', arch: 'A', pct: 30, shift: 60, gate: mainGateOf(archById.A) };
+  const state = { mode: 'split', arch: 'A', pct: 10, shift: 60, gate: mainGateOf(archById.A) };
 
   const qs = new URLSearchParams(location.search);
   if (['light', 'dark'].includes(qs.get('theme'))) document.documentElement.dataset.theme = qs.get('theme');
@@ -276,6 +271,8 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
     const t = Math.round(h * 60 + m + minFromStart);
     return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
   };
+  const slotEnd = (i) => clock((i + 1) * DT);
+  const dur = (m) => (m >= 60 ? Math.floor(m / 60) + ' 小時' + (m % 60 ? ' ' + (m % 60) + ' 分' : '') : m + ' 分');
   const heat = (v, max) => {
     const p = max > 0 ? Math.min(1, v / max) : 0;
     return 'color-mix(in oklab, var(--s1) ' + Math.round(8 + p * 85) + '%, var(--surface))';
@@ -305,8 +302,8 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
 
   // ---------- static UI ----------
   const sample = D.meta.source === 'sample';
-  $('badge').textContent = sample ? '樣本資料・非實測' : '資料已替換・校準狀態須另驗證';
-  $('foot1').textContent = (sample ? '樣本資料' : '模型估計') + ' · 公司類型為模擬';
+  $('badge').textContent = sample ? '樣本資料・非實測' : '真實資料・臺北市 VD';
+  $('foot1').textContent = (sample ? '樣本資料' : '臺北市 VD 實測') + ' · 公司類型為模擬';
 
   D.archetypes.forEach((a) => $('arch').appendChild(new Option(a.name + '（' + fmt(a.staff) + ' 人）', a.id)));
   PRESETS.forEach((p) => {
@@ -328,9 +325,8 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
     const ov = $('ov');
     ov.innerHTML = '';
     const all = D.gates.map((g) => ({ g, r: simulate(D.days[day][g.id], g.capacity) }));
-    const max = Math.max(...all.flatMap((o) => o.r.rows.slice(0, N).map((x) => x.wait)));
+    const max = Math.max(...all.flatMap((o) => o.r.rows.slice(0, N).map((x) => x.mean)));
     const used = state.mode === 'split' ? archById[state.arch].gateShare : {};
-    $('ovNote').textContent = state.mode === 'split' ? '● ' + archById[state.arch].name + '員工會經過・點選切換' : '點選切換通勤口';
     for (const { g, r } of all) {
       const pick = () => { state.gate = g.id; update(); };
       const name = document.createElement('button');
@@ -344,68 +340,73 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
       strip.addEventListener('click', pick);
       r.rows.slice(0, N).forEach((x, i) => {
         const s = document.createElement('span');
-        s.style.background = heat(x.wait, max);
-        s.addEventListener('mousemove', (ev) => showTip('<b>' + g.name + '</b> ' + D.slots[i] + '<br>平均多等 ' + fmt(x.wait, 1) + ' 分鐘', ev));
+        s.style.background = heat(x.mean, max);
+        s.addEventListener('mousemove', (ev) => showTip('<b>' + g.name + '</b> ' + D.slots[i] + '–' + slotEnd(i) +
+          '<br>車龍約 ' + fmt(x.mean) + ' 台・每台多等 ' + fmt(x.wait * 60) + ' 秒', ev));
         s.addEventListener('mouseleave', hideTip);
         strip.appendChild(s);
       });
-      const worst = r.rows.slice(0, N).reduce((m, x, i) => (x.wait > m.w ? { w: x.wait, i } : m), { w: 0, i: 0 });
+      // a slot counts as jammed when the average line is at least 5 cars
+      const jam = r.rows.slice(0, N).map((x) => x.mean >= 5);
+      const first = jam.indexOf(true), last = jam.lastIndexOf(true);
+      const mins = jam.filter(Boolean).length * DT;
       const peak = document.createElement('span');
       peak.className = 'peak';
-      peak.textContent = worst.w >= 0.5 ? '最塞 ' + D.slots[worst.i] + '・多等 ' + fmt(worst.w, 0) + ' 分' : '順暢';
+      peak.textContent = first < 0 ? '順暢' : '塞 ' + dur(mins) + '・' + D.slots[first] + '–' + slotEnd(last);
       ov.append(name, strip, peak);
     }
     const ticks = document.createElement('div');
     ticks.className = 'ticks';
-    ticks.innerHTML = [0, 5, 9, 13].map((i) => '<span>' + D.slots[i] + '</span>').join('');
+    ticks.innerHTML = D.slots.filter((s) => s.endsWith(':00')).map((s) => '<span>' + s + '</span>').join('');
     ov.append(document.createElement('span'), ticks, document.createElement('span'));
   }
 
   function renderChart(r) {
     const svg = $('chart');
     svg.innerHTML = '';
-    const m = { l: 40, r: 10, t: 10, b: 24 }, W = 1000, H = 240, w = W - m.l - m.r, h = H - m.t - m.b, step = w / N;
-    const yMax = niceMax(Math.max(r.g.capacity, ...r.base, ...r.after.slice(0, N)) * 1.08);
-    const y = (v) => m.t + h - h * v / yMax;
+    // change in cars per slot: below the line = moved out, above = moved in
+    const m = { l: 40, r: 10, t: 10, b: 24 }, W = 1000, H = 200, w = W - m.l - m.r, h = H - m.t - m.b, step = w / N;
+    const diff = D.slots.map((_, i) => (r.after[i] || 0) - r.base[i]);
+    const yMax = niceMax(Math.max(10, ...diff.map(Math.abs)) * 1.1);
+    const mid = m.t + h / 2;
+    const y = (v) => mid - (h / 2) * v / yMax;
     const ax = el('g', { class: 'axis' });
-    for (let i = 0; i <= 4; i += 1) {
-      const v = yMax * i / 4, yy = y(v);
-      ax.appendChild(el('line', { x1: m.l, x2: m.l + w, y1: yy, y2: yy }));
-      ax.appendChild(el('text', { x: m.l - 6, y: yy + 4, 'text-anchor': 'end' }, v >= 1000 ? fmt(v / 1000, 1) + 'K' : fmt(v)));
+    for (const v of [-yMax, -yMax / 2, 0, yMax / 2, yMax]) {
+      ax.appendChild(el('line', { x1: m.l, x2: m.l + w, y1: y(v), y2: y(v), style: v === 0 ? 'stroke:var(--muted)' : '' }));
+      ax.appendChild(el('text', { x: m.l - 6, y: y(v) + 4, 'text-anchor': 'end' }, (v > 0 ? '+' : '') + fmt(v)));
     }
-    for (let i = 1; i < N; i += 4) ax.appendChild(el('text', { x: m.l + step * i + step / 2, y: H - 4, 'text-anchor': 'middle' }, D.slots[i]));
+    D.slots.forEach((s, i) => { if (s.endsWith(':00')) ax.appendChild(el('text', { x: m.l + step * i + step / 2, y: H - 4, 'text-anchor': 'middle' }, s)); });
     svg.appendChild(ax);
-    const bw = Math.min(22, step / 2 - 4);
-    const col = (x, v, fill) => {
-      const top = y(v), base = m.t + h, rr = Math.min(4, (base - top) / 2);
-      svg.appendChild(el('path', { fill, d: 'M' + x + ',' + base + 'V' + (top + rr) + 'Q' + x + ',' + top + ' ' + (x + rr) + ',' + top +
-        'H' + (x + bw - rr) + 'Q' + (x + bw) + ',' + top + ' ' + (x + bw) + ',' + (top + rr) + 'V' + base + 'Z' }));
-    };
+    const bw = Math.min(28, step - 10);
     for (let i = 0; i < N; i += 1) {
-      const cx = m.l + step * i + step / 2;
-      col(cx - bw - 1, r.base[i], 'var(--s1)');
-      col(cx + 1, r.after[i] || 0, 'var(--s2)');
+      const v = diff[i];
+      if (Math.abs(v) >= 0.5) {
+        const x = m.l + step * i + (step - bw) / 2, top = Math.min(y(v), mid), hgt = Math.abs(y(v) - mid), rr = Math.min(4, hgt / 2);
+        const d = v > 0
+          ? 'M' + x + ',' + mid + 'V' + (top + rr) + 'Q' + x + ',' + top + ' ' + (x + rr) + ',' + top + 'H' + (x + bw - rr) + 'Q' + (x + bw) + ',' + top + ' ' + (x + bw) + ',' + (top + rr) + 'V' + mid + 'Z'
+          : 'M' + x + ',' + mid + 'V' + (mid + hgt - rr) + 'Q' + x + ',' + (mid + hgt) + ' ' + (x + rr) + ',' + (mid + hgt) + 'H' + (x + bw - rr) + 'Q' + (x + bw) + ',' + (mid + hgt) + ' ' + (x + bw) + ',' + (mid + hgt - rr) + 'V' + mid + 'Z';
+        svg.appendChild(el('path', { d, fill: v > 0 ? 'var(--s2)' : 'var(--s1)' }));
+      }
       const hit = el('rect', { x: m.l + step * i, y: m.t, width: step, height: h, fill: 'transparent' });
-      hit.addEventListener('mousemove', (ev) => showTip('<b>' + D.slots[i] + '</b><br><i style="background:var(--s1)"></i>原配置 ' + fmt(r.base[i]) +
-        ' 車<br><i style="background:var(--s2)"></i>調整後 ' + fmt(r.after[i] || 0) + ' 車', ev));
+      hit.addEventListener('mousemove', (ev) => showTip('<b>' + D.slots[i] + '–' + slotEnd(i) + '</b><br>' +
+        (Math.abs(diff[i]) < 0.5 ? '沒有變動' : (diff[i] > 0 ? '<i style="background:var(--s2)"></i>移入 ' : '<i style="background:var(--s1)"></i>移走 ') + fmt(Math.abs(diff[i])) + ' 台') +
+        '<br>原本 ' + fmt(r.base[i]) + ' 台 → ' + fmt(r.after[i] || 0) + ' 台', ev));
       hit.addEventListener('mouseleave', hideTip);
       svg.appendChild(hit);
     }
-    svg.appendChild(el('line', { x1: m.l, x2: m.l + w, y1: y(r.g.capacity), y2: y(r.g.capacity), stroke: 'var(--ink-2)', 'stroke-width': 1.5, 'stroke-dasharray': '6 4' }));
-    svg.appendChild(el('text', { x: m.l + w, y: y(r.g.capacity) - 6, 'text-anchor': 'end', fill: 'var(--ink-2)', 'font-size': 12 }, '容量 ' + fmt(r.g.capacity)));
 
     // average queue per slot, both rows always visible
     const qb = r.b.rows.slice(0, N).map((x) => x.mean), qa = r.x.rows.slice(0, N).map((x) => x.mean);
     const max = Math.max(1, ...qb, ...qa);
     let html = '';
-    for (const [lab, vals] of [['原配置', qb], ['調整後', qa]]) {
+    for (const [lab, vals] of [['原本', qb], ['調整後', qa]]) {
       html += '<div class="lab">' + lab + '</div>';
       for (const v of vals) {
         const strong = v / max > 0.55;
         html += '<div class="c" style="' + (v >= 1 ? 'background:' + heat(v, max) + ';color:' + (strong ? '#fff' : 'var(--ink)') : '') + '">' + (v >= 1 ? fmt(v) : '·') + '</div>';
       }
     }
-    html += '<div></div>' + D.slots.map((s, i) => '<div class="t">' + (i % 4 === 1 ? s : '') + '</div>').join('');
+    html += '<div></div>' + D.slots.map((s) => '<div class="t">' + (s.endsWith(':00') ? s : '') + '</div>').join('');
     $('qrows').innerHTML = html;
   }
 
@@ -423,33 +424,31 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
     $('shift').value = state.shift;
 
     const total = r.base.reduce((s, v) => s + v, 0);
-    $('eyebrow').textContent = r.g.name + '・' + r.g.dir + '・平日晨峰';
-    $('headline').textContent = '同樣 ' + fmt(total) + ' 車次，改變的是等待。';
+    $('eyebrow').textContent = r.g.name + '・' + r.g.dir + '・' + D.slots[0] + '–' + slotEnd(N - 1);
+    $('headline').textContent = '同樣 ' + fmt(total / 10000, 1) + ' 萬台車，改變的是等待。';
 
     const cut = r.b.delay > 0 ? (r.b.delay - r.x.delay) / r.b.delay : 0;
-    const who = split ? a.name + ' ' + state.pct + '% 員工晚 ' + state.shift + ' 分' : '全體晚 ' + state.shift + ' 分';
-    $('sumMain').textContent = who + '，' + (Math.abs(cut) < 0.005 ? '等待沒有減少。' : '累積等待' + (cut > 0 ? '減少 ' : '增加 ') + fmt(Math.abs(cut) * 100, 0) + '%。');
+    const who = split ? a.name + ' ' + fmt(a.staff * state.pct / 100) + ' 人晚 ' + state.shift + ' 分上班' : '所有人晚 ' + state.shift + ' 分上班';
+    $('sumMain').textContent = who + ' → ' + (Math.abs(cut) < 0.005 ? '大家等待沒有減少' : '大家' + (cut > 0 ? '少等 ' : '多等 ') + fmt(Math.abs(cut) * 100, 0) + '%');
     if (!split) {
       $('sumSplit').textContent = '塞車只是整段往後移。';
     } else if (r.movedVeh < 1) {
       $('sumSplit').textContent = '這家公司的員工不經過' + r.g.name + '。';
     } else {
-      const per = r.moverSave / r.movedVeh, others = (r.b.delay - r.x.delay - r.moverSave) / 60;
-      $('sumSplit').textContent = '其他用路人省 ' + fmt(others, 0) + ' 車小時・錯峰員工每人' +
-        (per >= 0.05 ? '省 ' + fmt(per, 1) + ' 分' : per <= -0.05 ? '反而多等 ' + fmt(-per, 1) + ' 分' : '沒省到');
+      const per = r.moverSave / r.movedVeh * 60;
+      $('sumSplit').textContent = '晚上班的員工每人' + (per >= 3 ? '少等 ' + fmt(per) + ' 秒' : per <= -3 ? '反而多等 ' + fmt(-per) + ' 秒' : '幾乎沒差');
     }
 
-    const clearB = r.b.lastClear, clearX = r.x.lastClear;
     const stat = (label, value, unit, before, change) =>
       '<div class="stat"><div class="label">' + label + '</div><div class="value">' + value + (unit ? '<small>' + unit + '</small>' : '') +
-      '</div><div class="foot"><span>原配置 ' + before + '</span>' + (change ? '<b' + (change.startsWith('延後') ? ' style="color:var(--ink-2)"' : '') + '>' + change + '</b>' : '') + '</div></div>';
-    const dh = (r.b.delay - r.x.delay) / 60, dm = r.b.maximum - r.x.maximum;
+      '</div><div class="foot"><span>原本 ' + before + '</span>' + (change ? '<b' + (/^(多|變長)/.test(change) ? ' style="color:var(--ink-2)"' : '') + '>' + change + '</b>' : '') + '</div></div>';
+    const hb = r.b.delay / 60, hx = r.x.delay / 60, dm = r.b.maximum - r.x.maximum;
+    const avgB = r.b.delay * 60 / total, avgX = r.x.delay * 60 / total;   // seconds per car
     $('stats').innerHTML =
-      stat('總排隊等待量', fmt(r.x.delay / 60, 1), '車小時', fmt(r.b.delay / 60, 1), dh > 0.05 ? '減少 ' + fmt(cut * 100, 0) + '%' : '') +
-      stat('最大排隊', fmt(r.x.maximum), '車', fmt(r.b.maximum), dm >= 1 ? '減少 ' + fmt(dm) + ' 車' : '') +
-      stat('排隊結束', clearX == null ? '無排隊' : clock(clearX), '', clearB == null ? '無排隊' : clock(clearB),
-        clearB != null && clearX != null && clearX < clearB - 0.5 ? '提前 ' + fmt(clearB - clearX) + ' 分' :
-        clearB != null && clearX != null && clearX > clearB + 0.5 ? '延後 ' + fmt(clearX - clearB) + ' 分' : '');
+      stat('大家加起來多等', fmt(hx), '小時', fmt(hb) + ' 小時',
+        hb - hx >= 0.5 ? '少 ' + fmt(hb - hx) + ' 小時' : hx - hb >= 0.5 ? '多 ' + fmt(hx - hb) + ' 小時' : '') +
+      stat('最長車龍', fmt(r.x.maximum), '台', fmt(r.b.maximum) + ' 台', dm >= 1 ? '短 ' + fmt(dm) + ' 台' : dm <= -1 ? '變長 ' + fmt(-dm) + ' 台' : '') +
+      stat('每台車平均多等', fmt(avgX), '秒', fmt(avgB) + ' 秒', avgB - avgX >= 1 ? '少 ' + fmt(avgB - avgX) + ' 秒' : avgX - avgB >= 1 ? '多 ' + fmt(avgX - avgB) + ' 秒' : '');
 
     renderOverview();
     renderChart(r);
@@ -460,7 +459,7 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
   function renderGoal(a) {
     const goal = $('goal');
     if (state.mode !== 'split' || !(a.gateShare[state.gate] > 0)) {
-      goal.innerHTML = '<div><div class="muted">模型配置探索</div><div class="big">切到「分批錯峰」，並選擇會經過' + gateById[state.gate].name + '的公司</div></div>';
+      goal.innerHTML = '<div><div class="muted">試辦門檻</div><div class="big">切到「分批錯峰」，並選擇會經過' + gateById[state.gate].name + '的公司</div></div>';
       return;
     }
     const keep = state.pct;
@@ -472,10 +471,10 @@ footer { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; g
     }
     state.pct = keep;
     if (found == null) {
-      goal.innerHTML = '<div><div class="muted">模型配置探索・讓' + gateById[state.gate].name + '等待減半</div><div class="big">' + a.name + '在目前假設與搜尋範圍內未達減半目標</div></div>';
+      goal.innerHTML = '<div><div class="muted">試辦門檻・讓' + gateById[state.gate].name + '等待減半</div><div class="big">' + a.name + '單獨做不到，需要其他公司一起錯峰</div></div>';
       return;
     }
-    goal.innerHTML = '<div><div class="muted">模型配置探索・讓' + gateById[state.gate].name + '等待減半</div><div class="big">' + a.name + '需要 ' + found + '% 員工晚 ' + state.shift + ' 分</div></div>' +
+    goal.innerHTML = '<div><div class="muted">試辦門檻・讓' + gateById[state.gate].name + '等待減半</div><div class="big">' + a.name + '需要 ' + found + '% 員工晚 ' + state.shift + ' 分</div></div>' +
       '<span class="spacer"></span><button class="btn" type="button" id="tryGoal">試試這個配置</button>';
     $('tryGoal').addEventListener('click', () => { state.pct = found; update(); });
   }

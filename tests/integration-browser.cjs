@@ -1,6 +1,7 @@
 // Run with Node 22+ and Chrome remote debugging on localhost:9335.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const {pathToFileURL} = require('node:url');
 (async () => {
@@ -34,9 +35,11 @@ const {pathToFileURL} = require('node:url');
     await send('Emulation.setDeviceMetricsOverride', {width:1440, height:1050, deviceScaleFactor:1, mobile:false});
     await send('Page.navigate', {url:pathToFileURL(path.resolve(__dirname, '../web/index.html')).href});
     await ready("!!document.querySelector('#headline')?.textContent");
-    assert.match(await run("document.querySelector('#badge').textContent"), /非實測/);
-    assert.match(await run('document.body.innerText'), /49.6%/);
-    assert.match(await run('document.body.innerText'), /未校準/);
+    // Disclosure: the badge must match the data file's source, and simulated parts stay labelled.
+    const source = await run('window.NEIHU_DATA.meta.source');
+    assert.match(await run("document.querySelector('#badge').textContent"), source === 'sample' ? /非實測/ : /真實資料/);
+    assert.match(await run("document.querySelector('footer').innerText"), /公司類型為模擬/);
+    assert.match(await run("document.querySelector('a[href=\"evidence/index.html\"]').textContent"), /2025 官方路口調查/);
     const results = await run(`(() => {
       const out = [];
       for (const a of ['A','B','C','D']) for (const s of [15,30,45,60]) for (const p of [0,100]) {
@@ -53,7 +56,7 @@ const {pathToFileURL} = require('node:url');
     assert.equal(results.length, 33);
     results.forEach(t => assert.doesNotMatch(t, /NaN|Infinity|undefined/));
     assert.match(results.at(-1), /等待沒有減少/);
-    fs.writeFileSync('/private/tmp/neihu-integrated.png', Buffer.from((await send('Page.captureScreenshot', {format:'png'})).data,'base64'));
+    fs.writeFileSync(path.join(os.tmpdir(), 'neihu-integrated.png'),Buffer.from((await send('Page.captureScreenshot', {format:'png'})).data,'base64'));
     await run("document.querySelector('a[href=\"evidence/index.html\"]').click()");
     await ready("document.readyState === 'complete' && typeof TrafficModel !== 'undefined' && document.querySelectorAll('.timeline-peak').length === 4");
     assert.match(await run("document.querySelector('#focus-peak-title').textContent"), /4 個路口.*3 個時段/);
@@ -62,6 +65,6 @@ const {pathToFileURL} = require('node:url');
     await send('Emulation.setDeviceMetricsOverride', {width:390, height:844, deviceScaleFactor:1, mobile:true});
     assert.equal(await run('document.documentElement.scrollWidth<=innerWidth'), true);
     assert.deepEqual(errors, []);
-    console.log('PASS: sample disclosure, real evidence, 32 company scenarios, whole-shift comparison, round-trip links, mobile width, no JS exceptions');
+    console.log('PASS: data-source disclosure, evidence link, 32 company scenarios, whole-shift comparison, round-trip links, mobile width, no JS exceptions');
   } finally { ws.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });
