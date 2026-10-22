@@ -4,8 +4,8 @@
 // Neihu-area rows to daily CSV files.
 //
 // Usage:
-//   node collect.mjs                      # default window 06:45-09:45
-//   node collect.mjs --start 06:45 --end 09:45
+//   node collect.mjs                      # default window 06:45-10:30
+//   node collect.mjs --start 06:45 --end 10:30
 //   node collect.mjs --once               # single fetch, for testing
 //
 // Output (relative to ../data):
@@ -41,7 +41,7 @@ const arg = (name, def) => {
 };
 const ONCE = args.includes('--once');
 const START = arg('--start', '06:45');
-const END = arg('--end', '09:45');
+const END = arg('--end', '10:30');
 
 const pad = (n) => String(n).padStart(2, '0');
 const dateStr = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
