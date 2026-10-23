@@ -1,0 +1,68 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');
+(async()=>{
+ const response=await fetch('http://127.0.0.1:4173/planner.html');assert.equal(response.status,200);
+ const pages=await(await fetch(process.env.NEIHU_3D_CDP||'http://[::1]:9342/json')).json(),ws=new WebSocket(pages.find(p=>p.type==='page').webSocketDebuggerUrl);await new Promise(r=>ws.onopen=r);
+ let id=0;const pending=new Map(),errors=[];
+ ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.id){const p=pending.get(m.id);pending.delete(m.id);m.error?p.reject(m.error):p.resolve(m.result);}if(m.method==='Runtime.exceptionThrown')errors.push(m.params);};
+ const send=(method,params={})=>new Promise((resolve,reject)=>{pending.set(++id,{resolve,reject});ws.send(JSON.stringify({id,method,params}));});
+ const run=async expression=>{const r=await send('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value;};
+ const wait=async expression=>{for(let i=0;i<800;i++){if(await run(expression))return;await new Promise(r=>setTimeout(r,50));}throw Error('Timeout '+expression);};
+ const text=id=>run(`document.getElementById('${id}').textContent`);
+ const input=(id,value,event='input')=>run(`document.getElementById('${id}').value=${JSON.stringify(value)};document.getElementById('${id}').dispatchEvent(new Event('${event}',{bubbles:true}))`);
+ const clip=async(selector,file)=>{const rect=await run(`(()=>{const r=document.querySelector('${selector}').getBoundingClientRect();return {x:r.x+scrollX,y:r.y+scrollY,width:r.width,height:r.height,scale:1}})()`);fs.writeFileSync(file,Buffer.from((await send('Page.captureScreenshot',{format:'png',clip:rect,captureBeyondViewport:true})).data,'base64'));};
+ try{
+  await send('Runtime.enable');await send('Page.enable');await send('Network.enable');await send('Network.setCacheDisabled',{cacheDisabled:true});
+  await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+  const startup=await send('Page.addScriptToEvaluateOnNewDocument',{source:"try{localStorage.setItem('neihu-island-help','seen')}catch{}"});
+  let firstNavigation=true;const navigate=async file=>{await send('Page.navigate',{url:'about:blank'});await wait("location.href==='about:blank'");if(firstNavigation){errors.length=0;firstNavigation=false;}await send('Page.navigate',{url:'http://127.0.0.1:4173/'+file});await wait("['ready','fallback'].includes(document.body?.dataset.renderStatus)");};
+  const shot=async name=>{await run('new Promise(r=>setTimeout(r,1000))');fs.writeFileSync('/private/tmp/neihu-island-'+name+'.png',Buffer.from((await send('Page.captureScreenshot',{format:'png'})).data,'base64'));};
+  await navigate('traffic-island.html');assert.equal(await run('document.body.dataset.renderStatus'),'ready',await text('fallback-message'));
+  assert.equal(await run('trafficIslandState.dates.length'),18);assert.equal(await run('trafficIslandState.requested.length'),19);assert.equal(await run('trafficIslandState.period.expected'),285);assert.equal(await run('trafficIslandState.period.classified'),219);assert.equal(await run('trafficIslandState.period.congested'),18);
+  assert.equal(await run("document.querySelectorAll('#canvas-host canvas').length"),1);
+  assert.equal(await run('trafficIsland.scene.stats().routeCount'),30);
+  const visualRule=await run("(async()=>{const {vehicleLayout}=await import('./traffic-vehicles.js');const a=vehicleLayout(8,0),b=vehicleLayout(8,1);return {more:b.length>a.length,slower:b[0].speed<a[0].speed,missing:vehicleLayout(8,null).length}})()");assert.deepEqual(visualRule,{more:true,slower:true,missing:0});
+  const fleet=await run('trafficIsland.scene.vehicleState()');assert.ok(fleet.cars>30&&fleet.motorcycles>0);assert.ok(fleet.paths.filter(p=>!p.context&&p.share!==null).every(p=>p.vehicles.length>0));assert.ok(fleet.paths.every(p=>p.vehicles.length&&p.vehicles.every(v=>v.phase>0&&v.phase<1)));assert.equal(fleet.network.sourceCount,549);assert.equal(fleet.paths.length,fleet.network.paths);assert.equal(await run("document.querySelectorAll('#fleet-table tbody tr').length"),fleet.paths.length);assert.ok(fleet.paths.filter(p=>p.length>2&&p.vehicles.length).every(p=>p.vehicles.at(-1).phase>=.7));for(const name of ['成美橋','民權大橋','麥帥一橋','麥帥二橋','成功橋'])assert.ok(fleet.paths.some(p=>p.names.includes(name)&&p.vehicles.length),name);
+  const sample=JSON.stringify(fleet.samples);await run('new Promise(r=>setTimeout(r,300))');assert.notEqual(await run('JSON.stringify(trafficIsland.scene.vehicleState().samples)'),sample);
+  await run("document.querySelector('#motion-toggle').click()");const paused=await run('JSON.stringify(trafficIsland.scene.vehicleState().samples)');await run('new Promise(r=>setTimeout(r,250))');assert.equal(await run('JSON.stringify(trafficIsland.scene.vehicleState().samples)'),paused);await run("document.querySelector('#motion-toggle').click()");
+  assert.equal(await run("[...document.querySelectorAll('.time-label')].some(e=>getComputedStyle(e).display!=='none')"),false,'Scenario labels must not leak into city');
+  await shot('monitor');
+  const snapshot=await run('JSON.stringify(trafficIsland.data.observations)');
+  await run("document.querySelector('[data-gate=G6]').click()");assert.equal(await run('trafficIslandState.scope'),'all');assert.match(await text('detail-boundary'),/代理點/);assert.equal(await run("document.querySelector('#scope-notice').hidden"),false);
+  await run("document.querySelector('[data-gate=G2]').click()");assert.match(await text('detail-name'),/堤頂/);assert.match(await text('detail-direction'),/北向/);
+  await run("document.querySelector('[data-gate=G1]').click()");await input('island-scope','park','change');
+  await run('trafficIsland.setPeriod(9)');assert.match(await text('detail-boundary'),/09:30 後/);
+  await input('island-date','2026-09-24','change');assert.equal(await run('trafficIslandState.period.share'),null);assert.equal(await text('detail-share'),'缺資料');assert.equal(await run('trafficIslandState.totals.completeness'),0);assert.equal(await run('trafficIsland.scene.vehicleState().cars+trafficIsland.scene.vehicleState().motorcycles'),0);
+  await input('island-date','2026-09-25','change');assert.equal(await run('trafficIslandState.dates.length'),0);assert.equal(await run("document.querySelector('#play').disabled"),true);
+  await input('island-date','','change');await run('trafficIsland.setPeriod(4)');
+  await input('island-scope','all','change');assert.equal(await text('stat-roads'),'70 / 81');await run("trafficIsland.selectRoute('VQI4840:6004770200010A')");assert.match(await text('detail-boundary'),/超出模型範圍/);await input('island-scope','expressway','change');assert.equal(await run('trafficIsland.scene.vehicleState().paths.filter(p=>!p.context).flatMap(p=>p.vehicles).some(v=>v.kind===\"moto\")'),false);await input('island-scope','park','change');
+  await run("document.querySelector('[data-view=analysis]').click()");assert.equal(await run("document.querySelectorAll('#island-heat tbody tr').length"),30);assert.equal(await run("document.querySelectorAll('#island-heat [data-period]').length"),300);assert.equal(await run('trafficIsland.scene.stats().active'),false);await shot('analysis');
+  await run("document.querySelector('#island-heat [data-period=\"8\"]').click()");assert.equal(await run('trafficIslandState.view'),'monitor');assert.equal(await run('trafficIslandState.index'),8);
+  await run("document.querySelector('[data-view=quality]').click()");assert.equal(await run("document.querySelectorAll('#island-quality tbody tr').length"),19);await shot('quality');
+  await run("document.querySelector('[data-view=scenario]').click()");assert.equal(await run('trafficIsland.scene.stats().mode'),'scenario');assert.equal(await run("document.querySelector('#timeline').hidden"),true);
+  assert.equal(await run('trafficIslandScenario.plans.best.movedByMode.car'),48);assert.equal(await run('trafficIslandScenario.plans.best.movedByMode.moto'),39);
+  await shot('scenario');
+  await input('scenario-moto',0);assert.equal(await run('trafficIslandScenario.plans.best.movedByMode.moto'),0);await input('scenario-car',0);assert.equal(await run('trafficIslandScenario.plans.best.moved'),0);
+  await run("document.querySelector('#scenario-reset').click()");await input('scenario-delay','60','change');assert.equal(await run('trafficIslandScenario.plans.uniform.feasible'),false);assert.equal(await run("document.querySelector('[data-plan=uniform]').disabled"),true);
+  assert.equal(await run('JSON.stringify(trafficIsland.data.observations)'),snapshot);await run("document.querySelector('#scenario-reset').click();document.querySelector('[data-view=monitor]').click();trafficIsland.setPeriod(4)");
+  await run("document.querySelector('#top-view').click()");assert.equal(await run("document.querySelector('#top-view').getAttribute('aria-pressed')"),'true');await shot('bird');await run("document.querySelector('#home-view').click()");
+  await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});await wait('trafficIslandState.reduced===true');assert.equal(await run("document.querySelector('#play').disabled"),true);await run('new Promise(r=>setTimeout(r,1200))');const frozen=await run('trafficIsland.scene.stats().frameCount');await run('new Promise(r=>setTimeout(r,500))');assert.equal(await run('trafficIsland.scene.stats().frameCount'),frozen,'reduced motion must settle without a perpetual RAF');
+  await run('trafficIsland.setPeriod(2)');assert.equal(await run('trafficIslandState.index'),2);
+  await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});await wait('trafficIslandState.reduced===false');
+  await run("trafficIsland.setPeriod(8);document.querySelector('#play').click()");await wait('trafficIslandState.index===9');assert.equal(await run('trafficIslandState.playing'),false);
+  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await run("document.querySelector('#home-view').click();window.scrollTo(0,0)");await shot('mobile');assert.equal(await run('document.documentElement.scrollWidth<=innerWidth'),true);
+  await run("document.querySelector('[data-view=scenario]').click()");await shot('mobile-scenario');assert.equal(await run('document.documentElement.scrollWidth<=innerWidth'),true);
+  // Deliberately unavailable WebGL: keep the data workspaces usable and give a visible fallback.
+  const noGL=await send('Page.addScriptToEvaluateOnNewDocument',{source:"const old=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return /webgl/.test(type)?null:old.call(this,type,...args)}"});
+  await navigate('traffic-island.html');assert.equal(await run('document.body.dataset.renderStatus'),'fallback');assert.match(await text('fallback-message'),/WebGL/);await run("document.querySelector('[data-view=analysis]').click()");assert.equal(await run("document.querySelectorAll('#island-heat tbody tr').length"),30);await send('Page.removeScriptToEvaluateOnNewDocument',{identifier:noGL.identifier});
+  // Standalone needs no local data/script/style requests, only its HTML and declared Three CDN.
+  await send('Network.setBlockedURLs',{urls:['*127.0.0.1:4173/data/*','*127.0.0.1:4173/*.js','*127.0.0.1:4173/*.css']});
+  await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+  await navigate('traffic-island-standalone.html');assert.equal(await run('document.body.dataset.renderStatus'),'ready',await text('fallback-message'));assert.equal(await run('trafficIslandState.period.expected'),285);await run("document.querySelector('[data-view=scenario]').click()");assert.equal(await run('trafficIslandScenario.plans.best.movedByMode.car'),48);await shot('standalone');
+  await send('Network.setBlockedURLs',{urls:['*cdn.jsdelivr.net/npm/three@*']});await navigate('traffic-island.html');assert.equal(await run('document.body.dataset.renderStatus'),'fallback');assert.ok((await text('fallback-message')).length>5);assert.equal(await run('trafficIslandState.dates.length'),18);
+  await send('Network.setBlockedURLs',{urls:['*127.0.0.1:4173/data/route-clarity.json']});await navigate('traffic-island.html');assert.equal(await run('document.body.dataset.renderStatus'),'fallback');assert.match(await text('fallback-options'),/資料頁尚不可用/);assert.equal(await run("document.querySelector('[data-view=analysis]').disabled"),true);
+  await send('Network.setBlockedURLs',{urls:[]});await send('Page.removeScriptToEvaluateOnNewDocument',{identifier:startup.identifier});
+  await navigate('traffic-island.html');await run("document.querySelector('#help-close').click()");
+  assert.deepEqual(errors,[]);
+  console.log('PASS: WebGL runtime, full-length car/motorcycle streams, all-road/bridge coverage, shared pavement matching, fade exits, density/speed illustration, missing-flow hiding, pause, expressway mode restriction, 30 routes/300 heat cells, exact historical denominators, missing dates/holidays, three corridors, all four views, scenario conservation/ceilings/infeasibility, immutable snapshot, bird view, reduced-motion idle rendering, 390px, forced WebGL/CDN failure, self-contained standalone with local assets blocked, no uncaught exceptions');
+ }finally{ws.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});
