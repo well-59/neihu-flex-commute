@@ -1,3 +1,4 @@
+import {renderCompanyCommute} from './company-commute.js';
 import {renderCommuteComparison} from './commute-comparison.js';
 import {createVDOverlay} from './vd-overlay.js';
 import {periodColor} from './traffic-palette.js';
@@ -12,6 +13,7 @@ const color=periodColor;
 export async function start(){
  let analysisDetailOpen=false,allSummary,selectedRoad=null,selectedVD=null,vdOverlay;
  let city=null,summary,selected,index=4,view='monitor',playing=false,timer=null,motionPaused=false,monitor,deviceView,compareA=4,compareB=6;
+ const company={lat:null,lon:null,time:"09:00",radius:3000,rule:"half"};
  const media=matchMedia('(prefers-reduced-motion: reduce)');let reduced=media.matches;
  const fail=error=>{$('loading').hidden=true;$('fallback').hidden=false;$('fallback-message').textContent=error.message;$('fallback-title').textContent=summary?'3D 暫時無法顯示':'資料尚未載入';$('fallback-options').textContent=summary?'仍可查看路段分析與資料品質，或開啟原本的 2D 儀表板。':'觀測資料或程式載入失敗，資料頁尚不可用。請重新載入或開啟 2D 儀表板。';if(!summary)document.querySelectorAll('[data-view]').forEach(b=>b.disabled=true);$('runtime-status').textContent=summary?'3D 未就緒 · 可使用資料頁或 2D 備援':'資料未就緒 · 請重試或使用 2D 入口';city?.setActive(false);document.body.dataset.renderStatus='fallback';};
  $('retry').onclick=()=>location.reload();
@@ -90,12 +92,13 @@ export async function start(){
   }
   function renderCommute(){
    const d=summary.rows.find(d=>d.id===selected),output=renderCommuteComparison(d,summary,window.NEIHU_PERIOD_FLOW,compareA,compareB);
-   $('commute-panel').innerHTML=output.html;window.trafficCommuteState=output.result;
+   const business=renderCompanyCommute(allSummary,company,DATA.geography.roads.bbox,DATA.observations.provenance.generatedAt);
+   $('commute-panel').innerHTML=business.html+'<h2 id="commute-road-title">路段時段對照</h2>'+output.html;window.trafficCommuteState=output.result;window.companyCommuteState=business.result;
    $('panel-subtitle').textContent=d?`${label(d)} · ${d.vdId} · ${summary.requested.length} 個所選日（${summary.dates.length} 日有快照）`:'目前沒有選取路段，請調整上方範圍。';
   }
   function show(next){
    if(next==='scenario')next='commute';
-   stop();view=next;const isScene=['monitor','live','devices'].includes(next),live=next==='live',devices=next==='devices';
+   stop();city?.setCompanyPick(false);$('company-pick-notice').hidden=true;view=next;const isScene=['monitor','live','devices'].includes(next),live=next==='live',devices=next==='devices';
    $('scene-workspace').hidden=!isScene;$('island-road-strip').hidden=next!=='monitor';$('road-coverage').hidden=next!=='monitor';$('timeline').hidden=live||devices;
    document.querySelector('#timeline .time-row').hidden=next==='commute';document.querySelector('#timeline .timeline-foot').hidden=next==='commute';
    $('motion-toggle').hidden=devices;$('help-toggle').hidden=devices;$('help').hidden=true;$('data-panel').hidden=isScene;$('analysis-panel').hidden=next!=='analysis';$('quality-panel').hidden=next!=='quality';$('commute-panel').hidden=next!=='commute';
@@ -120,8 +123,21 @@ export async function start(){
   $('motion-toggle').onclick=()=>{motionPaused=!motionPaused;if(motionPaused)stop();city?.setPaused(motionPaused);$('motion-toggle').setAttribute('aria-pressed',String(motionPaused));$('motion-toggle').innerHTML=motionPaused?'▶ <span>恢復動態</span>':'Ⅱ <span>暫停動態</span>';};
   function help(open){$('help').hidden=!open;$('help-toggle').setAttribute('aria-expanded',String(open));if(open)stop();else{try{localStorage.setItem('neihu-island-help','seen');}catch{}}}
   $('help-toggle').onclick=()=>help($('help').hidden);$('help-close').onclick=()=>help(false);document.addEventListener('keydown',e=>{if(e.key==='Escape')help(false);});
-  $('commute-panel').onchange=e=>{if(e.target.id==='commute-a')compareA=Number(e.target.value);if(e.target.id==='commute-b')compareB=Number(e.target.value);renderCommute();};
-  $('commute-panel').addEventListener('click',e=>{const b=e.target.closest('[data-commute-slot]');if(b){compareB=Number(b.dataset.commuteSlot);renderCommute();}});
+  $('commute-panel').onchange=e=>{if(e.target.id==='commute-a')compareA=Number(e.target.value);if(e.target.id==='commute-b')compareB=Number(e.target.value);if(['commute-a','commute-b'].includes(e.target.id))renderCommute();};
+  function readCompanyForm(requireLocation=true){
+   const form=$('company-form');if(!form)return false;
+   if(requireLocation&&!form.reportValidity())return false;
+   const lat=form.elements.lat.value,lon=form.elements.lon.value;
+   company.lat=lat.trim()===''?null:Number(lat);company.lon=lon.trim()===''?null:Number(lon);company.time=form.elements.time.value;
+   company.radius=form.elements.radius.value==='map'?'map':Number(form.elements.radius.value);company.rule=form.elements.rule.value;return true;
+  }
+  $('commute-panel').addEventListener('submit',e=>{if(e.target.id!=='company-form')return;e.preventDefault();if(readCompanyForm()){renderCommute();city?.setCompanyPosition(window.companyCommuteState?company:null);}});
+  $('commute-panel').addEventListener('click',e=>{
+   const b=e.target.closest('[data-commute-slot]');if(b){compareB=Number(b.dataset.commuteSlot);renderCommute();}
+   const route=e.target.closest('[data-company-route]');if(route){$('island-scope').value='all';recompute();selected=route.dataset.companyRoute;$('island-route').value=selected;compareA=Number(route.dataset.companyPeriod);compareB=Math.min(13,compareA+1);render();$('commute-road-title').scrollIntoView({block:'start'});}
+   if(e.target.closest('#company-pick')){readCompanyForm(false);if(!city){$('company-error').textContent='3D 尚未就緒，請直接輸入公司座標。';return;}show('monitor');city.setCompanyPick(true);city.home();city.bird();$('company-pick-notice').hidden=false;}
+  });
+  $('company-pick-cancel').onclick=()=>{city?.setCompanyPick(false);show('commute');};
   media.addEventListener('change',e=>{reduced=e.matches;if(reduced)stop();city?.setReduced(reduced);render();});document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
   monitor=createMonitor({summary:summarize(DATA.observations,{scope:'all'}),getCity:()=>city,onState:(_,snapshot)=>{if(window.trafficIslandState)Object.assign(window.trafficIslandState,{view:'live',source:'live'});vdOverlay?.sync(snapshot);vdOverlay?.render();if(vdOverlay?.opened)$('live-detail').hidden=true;}});
   deviceView=createDeviceView({DATA,getCity:()=>city,onSnapshot:next=>vdOverlay?.sync(next)});
@@ -133,7 +149,7 @@ export async function start(){
   $('runtime-status').textContent='資料已載入 · 準備 3D';
   try{
    const module=await Promise.race([import('./traffic-island-scene.js'),new Promise((_,reject)=>setTimeout(()=>reject(Error('3D 元件載入逾時，請檢查網路或改用 2D 備援。')),20000))]);
-   city=module.createCity($('canvas-host'),DATA,selection=>{stop();if(selection.road){selectRoad(selection.road);return;}if(selection.device){if(view==='devices')deviceView.select(selection.device,selection.link);else vdOverlay.select(selection.device,selection.link);return;}if(selection.route)selectRoute(selection.route);if(selection.gate)selectGate(selection.gate);},fail);city.setReduced(reduced);render();try{if(localStorage.getItem('neihu-island-help')!=='seen')help(true);}catch{help(true);}$('loading').hidden=true;document.body.dataset.renderStatus='ready';$('runtime-status').textContent='3D 已就緒 · 全路網模型配置；非實測車數／速度';
+   city=module.createCity($('canvas-host'),DATA,selection=>{stop();if(selection.companyPosition){Object.assign(company,selection.companyPosition);city.setCompanyPosition(company);show('commute');return;}if(selection.road){selectRoad(selection.road);return;}if(selection.device){if(view==='devices')deviceView.select(selection.device,selection.link);else vdOverlay.select(selection.device,selection.link);return;}if(selection.route)selectRoute(selection.route);if(selection.gate)selectGate(selection.gate);},fail);city.setReduced(reduced);render();try{if(localStorage.getItem('neihu-island-help')!=='seen')help(true);}catch{help(true);}$('loading').hidden=true;document.body.dataset.renderStatus='ready';$('runtime-status').textContent='3D 已就緒 · 全路網模型配置；非實測車數／速度';
    const initialView=new URLSearchParams(location.search).get('view');if(['commute','scenario','live','devices'].includes(initialView))show(initialView);
   }catch(error){fail(error);}
  }catch(error){fail(error);}
