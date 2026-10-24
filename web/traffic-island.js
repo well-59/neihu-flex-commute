@@ -137,6 +137,7 @@ export async function start(){
   // A press nudges the map once; holding keeps it moving until release.
   const panDirections={up:[0,1],down:[0,-1],left:[-1,0],right:[1,0]};let holdTimer=0;const endHold=()=>{clearTimeout(holdTimer);holdTimer=0;city?.panHold(0,0);};
   for(const b of document.querySelectorAll('[data-pan]')){const [x,z]=panDirections[b.dataset.pan];b.addEventListener('pointerdown',e=>{if(e.button!==0)return;endHold();city?.panStep(x*.22,z*.22);holdTimer=setTimeout(()=>city?.panHold(x,z),320);b.setPointerCapture?.(e.pointerId);});for(const type of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(type,endHold);b.addEventListener('click',e=>{if(e.detail===0)city?.panStep(x*.22,z*.22);});b.addEventListener('contextmenu',e=>e.preventDefault());}
+  $('close-view').onclick=()=>city?.closeView(view==='live'?window.trafficMonitoringState?.selected:selected);
   addEventListener('blur',endHold);$('top-view').onclick=()=>$('top-view').setAttribute('aria-pressed',String(city?.bird()||false));
   $('motion-toggle').onclick=()=>{motionPaused=!motionPaused;if(motionPaused)stop();city?.setPaused(motionPaused);$('motion-toggle').setAttribute('aria-pressed',String(motionPaused));$('motion-toggle').innerHTML=motionPaused?'▶ <span>恢復動態</span>':'Ⅱ <span>暫停動態</span>';};
   function help(open){$('help').hidden=!open;$('help-toggle').setAttribute('aria-expanded',String(open));if(open)stop();else{try{localStorage.setItem('neihu-island-help','seen');}catch{}}}

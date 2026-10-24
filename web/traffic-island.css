@@ -119,3 +119,10 @@ body:is(.live-active,.history-active){background:#f2f2e8}
 .history-active #scene-legend{display:flex;flex-wrap:wrap;align-content:center;gap:6px 12px}
 
 #company-form .company-location{flex:1 0 100%;min-width:0}.company-search-row{display:flex;gap:8px;margin-top:7px}.company-search-row input{flex:1;min-width:0;width:auto!important}.company-search-note,#company-selected-location,#company-search-status{font-size:12px;line-height:1.7;margin:8px 0}.company-search-note{color:var(--muted)}#company-search-results{display:grid;gap:8px;width:100%}#company-search-results button{display:grid;gap:5px;text-align:left;white-space:normal;overflow-wrap:anywhere;background:#f4f6ec;padding:12px 16px}#company-search-results span{font-size:12px}#company-search-results small{font-size:11px;color:var(--muted)}#company-selected-location{border-left:3px solid var(--green);padding:8px 12px;background:#edf1e6}@media(max-width:800px){.company-search-row{flex-wrap:wrap}.company-search-row input{flex-basis:100%}.company-search-row button{width:100%}}
+
+/* Softer studio backdrop for the clay model; observation colours stay unchanged. */
+#scene-workspace:is(.live-active,.history-active){background:radial-gradient(ellipse at 52% 45%,#fffaf1,#efe8d9)}
+:is(.live-active,.history-active) #canvas-host{border-radius:24px;overflow:hidden}
+:is(.live-active,.history-active) .scene-controls{flex-wrap:wrap;max-width:calc(100% - 610px)}
+@media(min-width:801px) and (max-width:1150px){:is(.live-active,.history-active) .scene-controls{max-width:calc(100% - 520px)}}
+@media(max-width:800px){:is(.live-active,.history-active) #canvas-host{border-radius:18px}:is(.live-active,.history-active) .scene-controls{max-width:calc(100% - 26px);gap:3px}.scene-controls>button,:is(.live-active,.history-active) .scene-controls>button{width:36px;min-height:43px}.scene-controls .nav-pad,:is(.live-active,.history-active) .scene-controls .nav-pad{width:67px}}

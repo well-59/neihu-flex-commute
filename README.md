@@ -211,3 +211,13 @@ node tests/vd-location-browser.cjs
 **獎勵兌換商品**（`?view=store`）：顯示目前點數、累積／已使用點數，14 項示範商品分綠色交通、餐飲生活、休閒健康、企業福利，標示政府補助／企業提供／合作商家；點數不足顯示差額，兌換需二次確認並產生示範兌換碼，附點數明細。示範帳戶起始 24 點，點數與紀錄只存在本機瀏覽器 localStorage（無法使用時退回當次頁面記憶體），可重設。
 
 程式：`web/flex-reward-model.js`（公式）、`web/flex-reward.js`（頁面）、`web/reward-store.js`（商品與錢包）、`web/flex-reward.css`。`relativePosition` 移至 `vd-location-model.js` 共用，`company-commute.js` 照舊匯出。檢查：`node --test tests/flex-reward.test.mjs`（公式邊界、全早壅塞、缺資料、原始 bins 對照、獎勵邊界、錢包每日一點／兌換／庫存／保存／重設）。瀏覽器已手動檢查桌面 1440 與手機 390 寬、地圖選點往返、通勤頁選點未受影響與單檔版本；尚未加入自動化瀏覽器回歸。
+
+## 黏土模型展示調整
+
+2026-10-24 整合遠端 `main` 的 `e1eb65b`（彈性工時獎勵／兌換商品）與本機模型調整：保留兩組功能，重新匯出單檔。PASS：117 項 Node 測試、`map-interaction-browser.cjs`、`company-commute-browser.cjs`；另以獨立 Chrome 檢查一般版與單檔的獎勵表單、實際地圖選點／取消、兩頁互連、示範兌換／取消、390px 版面，以及近景／全景切換和原始觀測資料未變。手機截圖已檢視；實體手機效能與公開部署仍未驗證。此為第一次整合時的驗證紀錄；當時修改尚未 commit／push。
+
+維持緊湊底座、道路地理位置及觀測色帶，微調奶油／暖砂色、底座圓角、圓潤樹冠、粉彩建物與小屋屋頂。汽機車模型最大顯示比例由 0.62 調為 0.78，只改善辨識，沒有改變觀測量、車種分配、動畫路徑或速度。新增「模型近景」，優先聚焦目前可定位路段，無可定位路段時顯示園區示意近景；「全景」可回到完整島嶼。模型建物、植栽及比例仍為示意。
+
+PASS：`tests/map-interaction-browser.cjs`（桌面／手機手勢、21 道路、來源數值、車種原配色、單檔）；專用 Chrome 近景／全景按鈕與 390px 工具列檢查、觀測資料不變、無未捕捉例外；桌面全景／近景及手機近景截圖已檢視。單檔匯出、diff 檢查通過。實體手機效能未驗證。
+
+2026-10-24 後續同步遠端 `5422787`，保留 Vercel 部署設定與兩支 API，整合模型調整。重新驗證 PASS：117 項 Node 測試、10 項 Python 測試、單檔匯出及 diff 檢查；前端實作未因這次部署設定整合改變，沿用上述瀏覽器驗證。GitHub repo 已確認為 PUBLIC；公開網站的部署結果仍為 UNVERIFIED，本次不另執行部署指令。若採純靜態展示，可使用 `web/traffic-island-standalone.html`（Three.js CDN 仍需連網），不含即時 API 與文字搜尋；完整網站需搭配本機服務或新增的 Vercel functions。

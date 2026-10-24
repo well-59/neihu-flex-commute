@@ -34,7 +34,7 @@ export function createVehicleFleet(parent){
  }
  function rebuild(next,time=0){
   paths=next;records=[];
-  for(const p of next){const length=p.curve.getLength();p.curve.updateArcLengths();const layout=p.monitoring?observedVehicleLayout(length,p.monitoring,p):vehicleLayout(length,p.share,p);for(const v of layout){if(v.kind==='car'&&p.cars===false||v.kind==='moto'&&p.motorcycles===false||p.directionUnknown)continue;records.push({...v,curve:p.curve,length,route:p.route,context:!!p.context,closed:!!p.closed,scale:Math.min(.62,length/.40)});}}
+  for(const p of next){const length=p.curve.getLength();p.curve.updateArcLengths();const layout=p.monitoring?observedVehicleLayout(length,p.monitoring,p):vehicleLayout(length,p.share,p);for(const v of layout){if(v.kind==='car'&&p.cars===false||v.kind==='moto'&&p.motorcycles===false||p.directionUnknown)continue;records.push({...v,curve:p.curve,length,route:p.route,context:!!p.context,closed:!!p.closed,scale:Math.min(.78,length/.40)});}}
   for(const kind of ['car','moto']){if(meshes[kind]){parent.remove(meshes[kind]);meshes[kind].dispose();}const count=records.filter(p=>p.kind===kind).length;const mesh=new THREE.InstancedMesh(geometries[kind],material,count);mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.frustumCulled=false;mesh.castShadow=false;meshes[kind]=mesh;parent.add(mesh);}
   update(time);
  }
