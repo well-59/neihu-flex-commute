@@ -35,3 +35,7 @@ node --test archive/pre-v8/tests/observatory.test.cjs
 ## 舊分支整合（2026-10-24）
 
 [v3 概念稿](pre-v8/docs/DESIGN-v3-20261022.md) 原樣保存自 `878d28e`（原 `docs/concept-v3` 分支）；既有 v2 概念稿仍保留。文中的錯峰效果、容量與排隊推算是當時的模型主張，未在本次整理重新驗證，不作為現行政策效益證據。
+
+`9d0142a`（原 `data/2026-10-23` 分支）的八份壓縮資料原樣保留於 [dataset](../dataset/README.md)。當時的[生成資料](pre-v8/data/neihu-data-20261023.js)與[原說明](pre-v8/data/README-20261023.md)另行歸檔，未覆寫現行畫面資料。
+
+`pre-v8/collector/publish-data.mjs` 與 `publish.cmd` 原樣保存舊的自動開分支／PR 工具；僅供歷史查閱，不執行。原工具依賴原目錄結構，而且 dry-run 仍會建立 worktree／commit，不符合現在只用 `main` 的維護方式。

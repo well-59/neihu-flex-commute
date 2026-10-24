@@ -38,6 +38,7 @@ VD 位置頁以已保存盤點為起點，也可手動更新。128 個設備中 
 | `web/planner*`、`web/dashboard-shell.js` | 2D 備援、觀測證據與獨立配置 |
 | `web/route-evidence*`、`web/road-scene.js`、`web/planning-model.js` | 共用資料計算與地圖 |
 | `web/data/`、`web/vendor/` | 現行快照、圖資、來源計算 |
+| [dataset/](dataset/README.md) | 10/22、10/23 的原始收集檔；已保存，尚未載入目前畫面 |
 | `web/evidence/` | 仍被現行版本使用的 2025 官方調查、原始 XLSX 與重建工具 |
 | `docs/` | [3D 規格](docs/TRAFFIC-ISLAND-3D-SPEC.md)、[API 清單](docs/TDX-API-CATALOG.md)、[隊友來源紀錄](docs/TEAMMATE-INTEGRATION.md) |
 | `scripts/`、`collector/` | 預覽、匯出、匯入、圖資與單日資料處理、收集工具 |
@@ -80,7 +81,7 @@ node tests/vd-location-browser.cjs
 
 ## 保存與歷史
 
-整理前保存點：[b398fdd](https://github.com/well-59/neihu-flex-commute/commit/b398fddf491006649559bc7eae9e0beb13bf1a85)，位於自己的 `well-59/neihu-flex-commute`，分支 `integrate/local-competition-materials`。
+整理前保存點：[b398fdd](https://github.com/well-59/neihu-flex-commute/commit/b398fddf491006649559bc7eae9e0beb13bf1a85)，位於自己的 `well-59/neihu-flex-commute`；原分支 `integrate/local-competition-materials` 已整合，保存點直接由 commit 連結存取。
 
 - [完整開發與驗證紀錄](archive/pre-v8/docs/README-before-cleanup.md)
 - [本次移動對照與原始雜湊](archive/FILE-MAP-20261024.json)
@@ -97,3 +98,9 @@ node tests/vd-location-browser.cjs
 驗證紀錄：PASS — 72 項 Node 模型測試、6 項 Python 解析測試、VD 位置頁 Chrome 檢查及既有 3D 完整回歸（含手機版、單檔與錯誤備援）。單檔匯出與 Git diff 格式檢查通過。即時 API／動畫串接曾通過實際來源與瀏覽器檢查；本次方向欄位更正有專門模型／解析測試，未重新跑完整即時瀏覽器測試。資料覆蓋、合法轉向與排隊長度的限制仍依上節，不因測試通過而視為已校準。
 
 來源檔、歷史快照與隊友 repo 保持原樣；原始下載與 API 快取留在 Git 排除的 `data/`，本次僅保存有來源時間與雜湊的公開盤點快照及展示資料。
+
+## 分支維護方式
+
+2026-10-24 使用者決定：本 repo 統一在 `main` 整理與開發，除非另有明確要求，不建立其他工作分支。commit／push 仍需當次或持續有效的明確授權；這項決定不代表每次修改都自動上傳。
+
+舊概念稿、10/22–10/23 收集資料及舊生成結果已合併保存；現行畫面程式與展示資料不因本次分支整理而變更。原分支的 commit 歷史保留在 `main`，歸檔位置見 [歷史索引](archive/README.md)。舊自動開分支／PR 工具僅歸檔，不作為目前上傳流程。
