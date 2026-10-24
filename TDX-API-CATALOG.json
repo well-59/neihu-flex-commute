@@ -1,0 +1,150 @@
+{
+  "title": "隊友 repo API 來源清單",
+  "recordedDate": "2026-10-24",
+  "sourceRepository": "https://github.com/zach0627/neihu-route-clarity",
+  "sourceCommit": "ed126ccf4fb8e2d79a2cbe1047509b7540167901",
+  "status": "FACT_FROM_REPOSITORY_NOT_LIVE_API_VERIFICATION",
+  "liveApiVerification": "NOT_RUN",
+  "entries": [
+    {
+      "id": "tdx-auth",
+      "purpose": "TDX 取得 Token",
+      "method": "POST",
+      "url": "https://tdx.transportdata.tw/auth/realms/TDXConnect/protocol/openid-connect/token",
+      "codeReference": "scripts/download.mjs:47",
+      "requestShape": "grant_type=client_credentials；client_id/client_secret 只由執行環境提供",
+      "fieldsUsedOrExpectedByCode": "access_token",
+      "usageBoundary": "只供伺服器端認證，不是交通資料"
+    },
+    {
+      "id": "historical-vd",
+      "purpose": "歷史設備與車道方向",
+      "method": "GET",
+      "url": "https://tdx.transportdata.tw/api/historical/v2/Historical/Road/Traffic/VD/City/Taipei",
+      "codeReference": "scripts/download.mjs:118",
+      "requestShape": "Dates=YYYY-MM-DD；$format=JSONL；$top=2000",
+      "fieldsUsedOrExpectedByCode": "VDID,TownName,PositionLat,PositionLon,DetectionLinks[LinkID,LaneNum,ActualLaneNum]",
+      "usageBoundary": "依同日靜態資料建立測點、方向與車道涵蓋"
+    },
+    {
+      "id": "historical-vd-live",
+      "purpose": "歷史逐分鐘車流",
+      "method": "GET",
+      "url": "https://tdx.transportdata.tw/api/historical/v2/Historical/Road/Traffic/Live/VD/City/Taipei",
+      "codeReference": "scripts/download.mjs:126",
+      "requestShape": "Dates=YYYY-MM-DD；$format=JSONL；$top=2000000",
+      "fieldsUsedOrExpectedByCode": "VDID,DataCollectTime,Status,LinkFlows[].Lanes[LaneID,Speed,Occupancy,ErrorDiags,Vehicles[VehicleType,Volume]]",
+      "usageBoundary": "分車種流量源頭；現有彙整沒有保留完整分車種序列"
+    },
+    {
+      "id": "historical-section-live",
+      "purpose": "歷史官方發布路段路況",
+      "method": "GET",
+      "url": "https://tdx.transportdata.tw/api/historical/v2/Historical/Road/Traffic/Live/City/Taipei",
+      "codeReference": "scripts/download-sections.mjs:59",
+      "requestShape": "Dates=YYYY-MM-DD；$format=JSONL；$top=3000000",
+      "fieldsUsedOrExpectedByCode": "SectionID,DataCollectTime,TravelSpeed,CongestionLevel",
+      "usageBoundary": "與 VD 同時刻分級比對；可能同源，不是獨立政策成效"
+    },
+    {
+      "id": "current-vd",
+      "purpose": "目前設備靜態資料",
+      "method": "GET",
+      "url": "https://tdx.transportdata.tw/api/basic/v2/Road/Traffic/VD/City/Taipei",
+      "codeReference": "scripts/live-update.mjs:44",
+      "requestShape": "$format=JSON",
+      "fieldsUsedOrExpectedByCode": "VDs[].VDID,VDs[].DetectionLinks",
+      "usageBoundary": "目前收集程式仍用歷史快照 VD 清單過濾；新設備需重新盤點"
+    },
+    {
+      "id": "current-vd-live",
+      "purpose": "目前 VD 分鐘觀測",
+      "method": "GET",
+      "url": "https://tdx.transportdata.tw/api/basic/v2/Road/Traffic/Live/VD/City/Taipei",
+      "codeReference": "scripts/live-update.mjs:44",
+      "requestShape": "$format=JSON",
+      "fieldsUsedOrExpectedByCode": "VDLives[].VDID,DataCollectTime,LinkFlows[].Lanes[].ErrorType,Vehicles",
+      "usageBoundary": "現有程式每分鐘輪詢；ErrorType 轉為 ErrorDiags 供共用篩選"
+    },
+    {
+      "id": "congestion-levels",
+      "purpose": "臺北市速率等級門檻",
+      "method": "GET",
+      "url": "https://tdx.transportdata.tw/api/basic/v2/Road/Traffic/CongestionLevel/City/Taipei",
+      "codeReference": "scripts/reference.mjs:71",
+      "requestShape": "$format=JSON",
+      "fieldsUsedOrExpectedByCode": "CongestionLevels[CongestionLevelID,MeasureIndex,Levels[Level,LowValue,TopValue]]",
+      "usageBoundary": "官方 A–F 門檻；以 E/F 定義壅塞是專案規則"
+    },
+    {
+      "id": "sections",
+      "purpose": "官方發布路段對照",
+      "method": "GET",
+      "url": "https://tdx.transportdata.tw/api/basic/v2/Road/Traffic/Section/City/Taipei",
+      "codeReference": "scripts/reference.mjs:72",
+      "requestShape": "$format=JSON",
+      "fieldsUsedOrExpectedByCode": "Sections[SectionID,SectionName,LinkIDs,RoadDirection,SectionLength]",
+      "usageBoundary": "建立 SectionID 與 LinkID 對照，非任意名稱配對"
+    },
+    {
+      "id": "current-section-live",
+      "purpose": "官方發布路段目前路況",
+      "method": "GET",
+      "url": "https://tdx.transportdata.tw/api/basic/v2/Road/Traffic/Live/City/Taipei",
+      "codeReference": "scripts/reference.mjs:73",
+      "requestShape": "$format=JSON",
+      "fieldsUsedOrExpectedByCode": "LiveTraffics[SectionID,TravelSpeed,CongestionLevel,CongestionLevelID,DataCollectTime]",
+      "usageBoundary": "reference 腳本取得組別映射；現有 live-update 並未每分鐘取得此端點"
+    },
+    {
+      "id": "link-metadata",
+      "purpose": "官方 LinkID 路段資訊",
+      "method": "POST",
+      "url": "https://tdx.transportdata.tw/api/basic/v2/Road/Link/LinkID",
+      "codeReference": "scripts/reference.mjs:69",
+      "requestShape": "$format=JSON；JSON body = LinkID 字串陣列",
+      "fieldsUsedOrExpectedByCode": "LinkID,RoadName,RoadDirection,RoadClass,StartPoint,EndPoint,Length,Version",
+      "usageBoundary": "地圖、方向與路段範圍"
+    },
+    {
+      "id": "link-geometry",
+      "purpose": "官方路段 GeoJSON 線形",
+      "method": "POST",
+      "url": "https://tdx.transportdata.tw/api/basic/v2/Road/Link/Shape/Geometry/GeoJson",
+      "codeReference": "scripts/reference.mjs:70",
+      "requestShape": "$format=JSON；JSON body = LinkID 字串陣列",
+      "fieldsUsedOrExpectedByCode": "features[].properties.LinkID,features[].geometry.coordinates",
+      "usageBoundary": "經緯度次序 lon,lat；用 LinkID 映射現有地圖"
+    },
+    {
+      "id": "city-road-links",
+      "purpose": "道路名稱查 LinkID 集合",
+      "method": "GET",
+      "url": "https://tdx.transportdata.tw/api/basic/v2/Road/Link/CityRoad/Taipei/{roadName}",
+      "codeReference": "scripts/reference.mjs:79",
+      "requestShape": "$format=JSON；roadName 需 URL encode",
+      "fieldsUsedOrExpectedByCode": "LinkID,RoadName,RoadDirection,StartPoint,EndPoint",
+      "usageBoundary": "取得園區道路區段，勿只用名稱合併不同方向"
+    },
+    {
+      "id": "address-coordinate",
+      "purpose": "官方門牌定位",
+      "method": "GET",
+      "url": "https://tdx.transportdata.tw/api/advanced/V3/Map/GeoCode/Coordinate/Address/{address}",
+      "codeReference": "scripts/reference.mjs:93",
+      "requestShape": "$format=JSON；address 需 URL encode",
+      "fieldsUsedOrExpectedByCode": "Address,Geometry (POINT)",
+      "usageBoundary": "園區門牌或使用者指定目的地；回傳地址仍須核對，不必綁公司"
+    },
+    {
+      "id": "listed-company-profile",
+      "purpose": "上市公司基本資料（選用）",
+      "method": "GET",
+      "url": "https://openapi.twse.com.tw/v1/opendata/t187ap03_L",
+      "codeReference": "scripts/reference.mjs:114",
+      "requestShape": "無；目前為全部清單後按公司代號篩選",
+      "fieldsUsedOrExpectedByCode": "公司代號,住址,出表日期",
+      "usageBoundary": "範本公司地址來源，不是交通需求或員工上下班證據"
+    }
+  ]
+}

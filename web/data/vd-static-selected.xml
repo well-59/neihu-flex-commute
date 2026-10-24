@@ -1,0 +1,185 @@
+<?xml version='1.0' encoding='utf-8'?>
+<SelectedVDRecords xmlns:ns0="http://traffic.transportdata.tw/standard/traffic/schema/" source="https://tcgbusfs.blob.core.windows.net/blobtisv/VD.xml"><ns0:VD>
+            <ns0:VDID>V6330G5</ns0:VDID>
+            <ns0:BiDirectional>0</ns0:BiDirectional>
+            <ns0:DetectionLinks>
+                <ns0:DetectionLink>
+                    <ns0:LinkID>2000900100300A</ns0:LinkID>
+                    <ns0:Bearing>W</ns0:Bearing>
+                    <ns0:RoadDirection>W</ns0:RoadDirection>
+                    <ns0:LaneNum>2</ns0:LaneNum>
+                    <ns0:ActualLaneNum>2</ns0:ActualLaneNum>
+                </ns0:DetectionLink>
+            </ns0:DetectionLinks>
+            <ns0:VDType>2</ns0:VDType>
+            <ns0:LocationType>1</ns0:LocationType>
+            <ns0:DetectionType>1</ns0:DetectionType>
+            <ns0:PositionLon>121.59809</ns0:PositionLon>
+            <ns0:PositionLat>25.05841</ns0:PositionLat>
+            <ns0:RoadID>200090</ns0:RoadID>
+            <ns0:RoadName>環東大道</ns0:RoadName>
+            <ns0:RoadClass>2</ns0:RoadClass>
+            <ns0:RoadSection>
+                <ns0:Start />
+                <ns0:End />
+            </ns0:RoadSection>
+            <ns0:LocationMile />
+            <ns0:LayoutMapURL />
+        </ns0:VD>
+        <ns0:VD>
+            <ns0:VDID>VMSV820</ns0:VDID>
+            <ns0:BiDirectional>1</ns0:BiDirectional>
+            <ns0:DetectionLinks>
+                <ns0:DetectionLink>
+                    <ns0:LinkID>6004160100000A</ns0:LinkID>
+                    <ns0:Bearing>NE</ns0:Bearing>
+                    <ns0:RoadDirection>NE</ns0:RoadDirection>
+                    <ns0:LaneNum>3</ns0:LaneNum>
+                    <ns0:ActualLaneNum>3</ns0:ActualLaneNum>
+                </ns0:DetectionLink>
+                <ns0:DetectionLink>
+                    <ns0:LinkID>6004160500000A</ns0:LinkID>
+                    <ns0:Bearing>SW</ns0:Bearing>
+                    <ns0:RoadDirection>SW</ns0:RoadDirection>
+                    <ns0:LaneNum>2</ns0:LaneNum>
+                    <ns0:ActualLaneNum>2</ns0:ActualLaneNum>
+                </ns0:DetectionLink>
+            </ns0:DetectionLinks>
+            <ns0:VDType>2</ns0:VDType>
+            <ns0:LocationType>1</ns0:LocationType>
+            <ns0:DetectionType>3</ns0:DetectionType>
+            <ns0:PositionLon>121.58235</ns0:PositionLon>
+            <ns0:PositionLat>25.05584</ns0:PositionLat>
+            <ns0:RoadID>600416A</ns0:RoadID>
+            <ns0:RoadName>新明路</ns0:RoadName>
+            <ns0:RoadClass>6</ns0:RoadClass>
+            <ns0:RoadSection>
+                <ns0:Start />
+                <ns0:End />
+            </ns0:RoadSection>
+            <ns0:LocationMile />
+            <ns0:LayoutMapURL />
+        </ns0:VD>
+        <ns0:VD>
+            <ns0:VDID>VQ6WK40</ns0:VDID>
+            <ns0:BiDirectional>1</ns0:BiDirectional>
+            <ns0:DetectionLinks>
+                <ns0:DetectionLink>
+                    <ns0:LinkID>6003650000030A</ns0:LinkID>
+                    <ns0:Bearing>N</ns0:Bearing>
+                    <ns0:RoadDirection>N</ns0:RoadDirection>
+                    <ns0:LaneNum>3</ns0:LaneNum>
+                    <ns0:ActualLaneNum>3</ns0:ActualLaneNum>
+                </ns0:DetectionLink>
+                <ns0:DetectionLink>
+                    <ns0:LinkID>6003650400030A</ns0:LinkID>
+                    <ns0:Bearing>S</ns0:Bearing>
+                    <ns0:RoadDirection>S</ns0:RoadDirection>
+                    <ns0:LaneNum>3</ns0:LaneNum>
+                    <ns0:ActualLaneNum>3</ns0:ActualLaneNum>
+                </ns0:DetectionLink>
+            </ns0:DetectionLinks>
+            <ns0:VDType>2</ns0:VDType>
+            <ns0:LocationType>1</ns0:LocationType>
+            <ns0:DetectionType>3</ns0:DetectionType>
+            <ns0:PositionLon>121.59077</ns0:PositionLon>
+            <ns0:PositionLat>25.0671</ns0:PositionLat>
+            <ns0:RoadID>600365A</ns0:RoadID>
+            <ns0:RoadName>成功路二段</ns0:RoadName>
+            <ns0:RoadClass>6</ns0:RoadClass>
+            <ns0:RoadSection>
+                <ns0:Start />
+                <ns0:End />
+            </ns0:RoadSection>
+            <ns0:LocationMile />
+            <ns0:LayoutMapURL />
+        </ns0:VD>
+        <ns0:VD>
+            <ns0:VDID>VQBUL20</ns0:VDID>
+            <ns0:BiDirectional>1</ns0:BiDirectional>
+            <ns0:DetectionLinks>
+                <ns0:DetectionLink>
+                    <ns0:LinkID>6005320200000A</ns0:LinkID>
+                    <ns0:Bearing>E</ns0:Bearing>
+                    <ns0:RoadDirection>E</ns0:RoadDirection>
+                    <ns0:LaneNum>4</ns0:LaneNum>
+                    <ns0:ActualLaneNum>4</ns0:ActualLaneNum>
+                </ns0:DetectionLink>
+                <ns0:DetectionLink>
+                    <ns0:LinkID>6005320600000A</ns0:LinkID>
+                    <ns0:Bearing>W</ns0:Bearing>
+                    <ns0:RoadDirection>W</ns0:RoadDirection>
+                    <ns0:LaneNum>3</ns0:LaneNum>
+                    <ns0:ActualLaneNum>3</ns0:ActualLaneNum>
+                </ns0:DetectionLink>
+            </ns0:DetectionLinks>
+            <ns0:VDType>2</ns0:VDType>
+            <ns0:LocationType>1</ns0:LocationType>
+            <ns0:DetectionType>3</ns0:DetectionType>
+            <ns0:PositionLon>121.57845</ns0:PositionLon>
+            <ns0:PositionLat>25.06674</ns0:PositionLat>
+            <ns0:RoadID>600532A</ns0:RoadID>
+            <ns0:RoadName>民權東路六段</ns0:RoadName>
+            <ns0:RoadClass>6</ns0:RoadClass>
+            <ns0:RoadSection>
+                <ns0:Start />
+                <ns0:End />
+            </ns0:RoadSection>
+            <ns0:LocationMile />
+            <ns0:LayoutMapURL />
+        </ns0:VD>
+        <ns0:VD>
+            <ns0:VDID>VRHT600</ns0:VDID>
+            <ns0:BiDirectional>0</ns0:BiDirectional>
+            <ns0:DetectionLinks>
+                <ns0:DetectionLink>
+                    <ns0:LinkID>2000700100180A</ns0:LinkID>
+                    <ns0:Bearing>N</ns0:Bearing>
+                    <ns0:RoadDirection>N</ns0:RoadDirection>
+                    <ns0:LaneNum>6</ns0:LaneNum>
+                    <ns0:ActualLaneNum>6</ns0:ActualLaneNum>
+                </ns0:DetectionLink>
+            </ns0:DetectionLinks>
+            <ns0:VDType>2</ns0:VDType>
+            <ns0:LocationType>1</ns0:LocationType>
+            <ns0:DetectionType>1</ns0:DetectionType>
+            <ns0:PositionLon>121.5725</ns0:PositionLon>
+            <ns0:PositionLat>25.07446</ns0:PositionLat>
+            <ns0:RoadID>200070</ns0:RoadID>
+            <ns0:RoadName>堤頂大道</ns0:RoadName>
+            <ns0:RoadClass>2</ns0:RoadClass>
+            <ns0:RoadSection>
+                <ns0:Start />
+                <ns0:End />
+            </ns0:RoadSection>
+            <ns0:LocationMile />
+            <ns0:LayoutMapURL />
+        </ns0:VD>
+        <ns0:VD>
+            <ns0:VDID>VTXQJ20</ns0:VDID>
+            <ns0:BiDirectional>0</ns0:BiDirectional>
+            <ns0:DetectionLinks>
+                <ns0:DetectionLink>
+                    <ns0:LinkID>6000910200000A</ns0:LinkID>
+                    <ns0:Bearing>E</ns0:Bearing>
+                    <ns0:RoadDirection>E</ns0:RoadDirection>
+                    <ns0:LaneNum>3</ns0:LaneNum>
+                    <ns0:ActualLaneNum>3</ns0:ActualLaneNum>
+                </ns0:DetectionLink>
+            </ns0:DetectionLinks>
+            <ns0:VDType>2</ns0:VDType>
+            <ns0:LocationType>1</ns0:LocationType>
+            <ns0:DetectionType>3</ns0:DetectionType>
+            <ns0:PositionLon>121.5586</ns0:PositionLon>
+            <ns0:PositionLat>25.08487</ns0:PositionLat>
+            <ns0:RoadID>600091A</ns0:RoadID>
+            <ns0:RoadName>內湖路一段</ns0:RoadName>
+            <ns0:RoadClass>6</ns0:RoadClass>
+            <ns0:RoadSection>
+                <ns0:Start />
+                <ns0:End />
+            </ns0:RoadSection>
+            <ns0:LocationMile />
+            <ns0:LayoutMapURL />
+        </ns0:VD>
+        </SelectedVDRecords>
