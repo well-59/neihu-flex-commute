@@ -1,0 +1,23 @@
+import {periodEvidence} from './route-evidence-model.js';
+import {flowEvidence,slotTime} from './period-comparison.js';
+import {periodColor} from './traffic-palette.js';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>Number.isFinite(n)?n.toLocaleString('zh-TW',{maximumFractionDigits:1}):'—';
+export const periodLabel=i=>`${slotTime(i)}–${slotTime(i+1)}`;
+export function commuteComparison(direction,dates,requested,a,b,flow){
+ if(![a,b].every(i=>Number.isInteger(i)&&i>=0&&i<14))throw Error('比較時段須在 07:00–10:30 內');
+ const read=i=>({index:i,period:direction&&i<10?periodEvidence(direction,dates,i,requested):null,flow:direction&&i<10?flowEvidence(flow,direction,requested,i):null});
+ const left=read(a),right=read(b);
+ const commonDates=left.period&&right.period?left.period.days.filter(d=>d.classified>0&&right.period.days.some(e=>e.date===d.date&&e.classified>0)).map(d=>d.date):[];
+ const aggregate=p=>{const ds=p.days.filter(d=>commonDates.includes(d.date)),minutes=ds.reduce((n,d)=>n+d.classified,0);return {minutes,share:minutes?ds.reduce((n,d)=>n+d.congested,0)/minutes:null};};
+ const paired=commonDates.length?{left:aggregate(left.period),right:aggregate(right.period)}:null;
+ return {source:'HISTORICAL',route:direction?.id??null,left,right,commonDates,paired,difference:paired?(paired.right.share-paired.left.share)*100:null,policyEffect:null,travelTimeBenefit:null};
+}
+export function renderCommuteComparison(direction,summary,flow,a,b){
+ const result=commuteComparison(direction,summary.dates,summary.requested,a,b,flow);
+ const options=value=>Array.from({length:14},(_,i)=>`<option value="${i}" ${i===value?'selected':''}>${periodLabel(i)}${i>=10?'（缺多日資料）':''}</option>`).join('');
+ const card=(side,name)=>{const p=side.period,f=side.flow;return `<article class="commute-card"><p class="eyebrow">${name}</p><h2>${periodLabel(side.index)}</h2><strong>${p?.share!=null?fmt(p.share*100)+'%':'缺資料'}</strong><p>歷史低速時間占比</p><small>${p?`低速 ${p.congested}／可判讀 ${p.classified} 分鐘 · 完整度 ${p.expected?fmt(p.classified/p.expected*100)+'%':'—'}<br>${p.observedDays}／${summary.requested.length} 個所選日有可判讀資料`:'目前沒有同口徑多日快照，不外推為順暢。'}</small><div class="commute-flow"><b>${f?.total!=null?fmt(f.total)+' 車次'+(f.complete?'':'（部分樣本）'):'尚無分時車次'}</b><small>${f?.total!=null?`汽車類 ${fmt(f.volumes.S+f.volumes.L+f.volumes.T)} · 機車 ${fmt(f.volumes.M)}<br>${esc(f.samples.map(s=>s.date).join('、'))}<br>有效 ${f.minutes}／應有 ${f.expected} 分鐘`:'缺資料不補零，也不以動畫車數代替。'}</small></div>${direction&&side.index<10?`<button data-select="${esc(direction.id)}" data-period="${side.index}">在城市回放查看 ↗</button>`:''}</article>`;};
+ const comparison=result.difference===null?'兩個時段沒有共同可判讀日期，目前無法比較差異。':a===b?'目前選的是同一時段，沒有時段差異。':`只取兩個時段都有資料的 ${result.commonDates.length} 天：B 的低速時間占比${Math.abs(result.difference)<.05?'與 A 相近':`${result.difference>0?'比 A 高':'比 A 低'} ${fmt(Math.abs(result.difference))} 個百分點`}。這是歷史差異，不是錯峰後的改善預測。`;
+ const bins=Array.from({length:14},(_,i)=>{const p=direction&&i<10?periodEvidence(direction,summary.dates,i,summary.requested):null;return `<button data-commute-slot="${i}" aria-pressed="${i===b}" style="background:${periodColor(p?.share??null)}" aria-label="將比較時段 B 設為 ${periodLabel(i)}"><span>${slotTime(i)}<small>–${slotTime(i+1)}</small></span><b>${p?.share!=null?fmt(p.share*100)+'%':'缺資料'}</b></button>`;}).join('');
+ return {result,html:`<p class="commute-intro">先看同一路段不同時間的紀錄，再討論是否值得嘗試。此處時間是<strong>通過測點的時段</strong>，不是出發或到班時間。</p><div class="commute-controls"><label>時段 A<select id="commute-a">${options(a)}</select></label><label>比較時段 B<select id="commute-b">${options(b)}</select></label></div><div class="commute-cards">${card(result.left,'時段 A')}${card(result.right,'比較時段 B')}</div><div class="commute-finding" role="status"><strong>${comparison}</strong>${result.paired?`<p>共同日期樣本：A ${fmt(result.paired.left.share*100)}%（${result.paired.left.minutes} 分鐘）；B ${fmt(result.paired.right.share*100)}%（${result.paired.right.minutes} 分鐘）。有效分鐘可能不同，並未控制天氣、事故或需求差異。</p><details><summary>核對共同日期</summary>${esc(result.commonDates.join('、'))}</details>`:''}</div><h2 class="commute-strip-title">這條路的早晨 · 點色格切換 B</h2><div class="commute-strip" tabindex="0" role="region" aria-label="07:00–10:30 分時紀錄，可左右捲動">${bins}</div><p class="muted">顏色越暖，低速時間占比越高；灰色為缺資料。09:30–10:30 尚缺同口徑多日觀測。車次與低速比例來自不同樣本，不能當成整體進園車數或直接比較車種效益。</p><div class="commute-uses"><p><b>駕駛</b>　參考歷史時段，出發前再看<button data-open="live">即時監控 ↗</button>。</p><p><b>企業</b>　以路況討論彈性選項，參與意願與可調整人數待確認。</p><p><b>政府</b>　若有自願試辦，再比較前後與未參與路段，檢查尖峰是否只是延後。</p></div><p class="boundary">歷史上較少低速，不代表車流移過去後仍然如此。尚無參與率、通勤省時或企業效益的估計。</p>`};
+}
