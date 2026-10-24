@@ -1,0 +1,13 @@
+# 內湖監控道路模型島
+
+User scope: draw every current Neihu VD road on the model island; visible road names and clickable directions; current congestion colors with a permanently visible legend; details on click; keep vehicles visible; improve geographic/traffic discipline and responsive UX. User explicitly requests implementation and authorizes layout changes.
+
+Retain Three.js and saved official VD/TDX plus OSM geometry. Use all current Neihu VD directions, not the historical representative subset. Exact LinkID/direction joins may reuse official geometry; no nearest differently named road may inherit a reading. Save provenance. Extend actual road extracts for 東湖路、成功路五段、成功路四段、文德路 and expand the island/camera to fit. Missing/expired observations remain gray and distinct from unmonitored context.
+
+Live view becomes the default. Map dominates; compact top status, searchable/collapsible road list, selection drawer and mobile bottom information card. Road names are accessible through the list at all times; labels on map declutter with zoom/selection instead of overlapping. Home fits the actual monitored extent; selection focuses the segment. Legend remains visible outside the detail drawer. Low-profile colored road ribbons must not cover vehicle bodies. Keyboard road selection must work.
+
+Congestion: prefer valid applicable official grade; otherwise documented route-specific speed thresholds when present, with clearly named local speed bands as last fallback. Never represent fixed local bands as official grades. Show direction, status, km/h, cars/motorcycles per observed minute, observation age/time, VD/LinkID, lane coverage and source/method. Never turn zero flow, stale feeds or failure into green. Animation is explicitly illustrative/data-driven, not live GPS. Keep historical/synthetic modes separately labeled.
+
+Road discipline: retain oneway/access/layer/source node information when available; no inferred turn across crossings, layers or unknown branches. Respect explicit motor vehicle/motorcycle restrictions. Use arc-length distance for motion, stable bridge/approach levels and common time scale. Do not claim navigation, legal-turn completeness, calibrated queues or actual trip savings.
+
+Acceptance: all baseline 80 coordinate-classified Neihu VD directions have an inspectable shape/selection; four previously missing roads are visible; map/legend/detail agree on fresh/stale/missing states; every monitored name is discoverable; mobile has no horizontal overflow and map controls remain reachable; vehicles stay above tint; existing data tests and relevant browser checks pass; standalone regenerated. Save changes on codex/vd-monitored-roads without push/public deployment.

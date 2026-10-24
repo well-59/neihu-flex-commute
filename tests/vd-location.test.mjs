@@ -9,7 +9,7 @@ const context={window:{}};vm.runInNewContext(fs.readFileSync(new URL('../web/dat
 const bbox=context.window.NEIHU_ROADS.bbox;
 test('current device inventory keeps two directions on one physical VD, with exact official coordinates',()=>{
  const before=JSON.stringify(snapshot),devices=deviceInventory(snapshot,history,bbox);
- assert.equal(devices.length,128);assert.equal(devices.filter(d=>d.inMap).length,90);assert.equal(devices.flatMap(d=>d.links).length,191);
+ assert.equal(devices.length,128);assert.equal(devices.filter(d=>d.inMap).length,104);assert.equal(devices.flatMap(d=>d.links).length,191);
  const d=devices.find(d=>d.id==='VQBUL20');assert.equal(d.links.length,2);assert.deepEqual(d.links.map(l=>l.bearing),['E','W']);
  assert.deepEqual(d.position,snapshot.rows.find(r=>r.vdId===d.id).position);assert.equal(d.links[0].reference.geometry.sectionId,null,'Do not manufacture a SectionID from a LinkID');
  const turning=devices.find(d=>d.id==='V6121A0').links[0];assert.equal(turning.roadDirection,'N');assert.equal(turning.bearing,'W');assert.ok(turning.reference,'Local bearing, not road direction, matches the historical reference');

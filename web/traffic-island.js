@@ -5,6 +5,7 @@ import {periodColor} from './traffic-palette.js';
 import {renderPeriodComparison,slotTime} from './period-comparison.js';
 import {createDeviceView} from './vd-locations.js';
 import {createMonitor} from './traffic-monitor.js';
+import {buildMonitoredSummary} from './monitored-roads.js';
 const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const bearing={E:'東向',W:'西向',N:'北向',S:'南向',NE:'東北向',NW:'西北向',SE:'東南向',SW:'西南向'};
 const label=d=>`${d.roadName}・${bearing[d.bearing]||d.bearing}`,fmt=n=>n==null?'—':n.toLocaleString('zh-TW',{maximumFractionDigits:1}),pct=n=>n==null?'缺資料':`${(n*100).toFixed(1)}%`;
@@ -84,9 +85,9 @@ export async function start(){
    const rows=d?qualityRows(d,summary.requested):[];
    $('island-quality').innerHTML=`<thead><tr><th>日期</th><th>收到／預期分鐘</th><th>有效車流分鐘</th><th>可分級分鐘</th><th>未能分級</th><th>有效車次</th><th>官方相同／配對分鐘</th></tr></thead><tbody>${rows.map(r=>`<tr><th>${r.date}</th><td>${fmt(r.received)} / 150</td><td>${fmt(r.valid)}</td><td>${fmt(r.speed)}</td><td>${fmt(r.unclassified)}</td><td>${fmt(r.volume)}</td><td>${r.official?.minutes?`${fmt(r.official.exact)} / ${fmt(r.official.minutes)}`:d.geometry?.sectionId?'本日無有效配對':'未對應官方路況分級'}</td></tr>`).join('')}</tbody>`;
   }
-  function selectRoute(id,{fly=true}={}){if(vdOverlay?.opened)vdOverlay.close();selectedVD=null;selectedRoad=null;city?.selectRoad(null);if(view==='live'){monitor.select(id,fly);return;}if(!summary.rows.some(d=>d.id===id))return;selected=id;$('island-route').value=id;render();city?.focusRoute(id,fly);}
-  function selectGate(gate){const info=DATA.presentation.corridors.find(c=>c.gate===gate),location=DATA.geography.locations.records.find(l=>l.gate===gate);const d=DATA.observations.directions.find(d=>d.vdId===(info?.vd||location?.id)&&d.bearing===(info?.bearing||location?.directions[0]));if(!d){$('scope-notice').hidden=false;$('scope-notice').textContent='此測點尚無對應多日方向，未補造數值。';return;}
-   if(view==='live'){monitor.select(d.id);return;}
+  function selectRoute(id,{fly=true,source='list'}={}){if(vdOverlay?.opened)vdOverlay.close();selectedVD=null;selectedRoad=null;city?.selectRoad(null);if(view==='live'){monitor.select(id,fly,source);return;}if(!summary.rows.some(d=>d.id===id))return;selected=id;$('island-route').value=id;render();city?.focusRoute(id,fly);}
+  function selectGate(gate,source='list'){const info=DATA.presentation.corridors.find(c=>c.gate===gate),location=DATA.geography.locations.records.find(l=>l.gate===gate);const d=DATA.observations.directions.find(d=>d.vdId===(info?.vd||location?.id)&&d.bearing===(info?.bearing||location?.directions[0]));if(!d){$('scope-notice').hidden=false;$('scope-notice').textContent='此測點尚無對應多日方向，未補造數值。';return;}
+   if(view==='live'){monitor.select(d.id,true,source);return;}
    if(!summary.rows.some(r=>r.id===d.id)){$('island-scope').value='all';$('scope-notice').hidden=false;$('scope-notice').textContent='為顯示此走廊測點，已切換全部已盤點方向；概況同步重算。';recompute();}
    const representative=summary.rows.find(r=>r.linkId===d.linkId);if(representative)selectRoute(representative.id);
   }
@@ -103,6 +104,7 @@ export async function start(){
    document.querySelector('#timeline .time-row').hidden=next==='commute';document.querySelector('#timeline .timeline-foot').hidden=next==='commute';
    $('motion-toggle').hidden=devices;$('help-toggle').hidden=devices;$('help').hidden=true;$('data-panel').hidden=isScene;$('analysis-panel').hidden=next!=='analysis';$('quality-panel').hidden=next!=='quality';$('commute-panel').hidden=next!=='commute';
    $('scene-workspace').classList.toggle('history-active',next==='monitor');$('scene-workspace').classList.toggle('devices-active',devices);
+   $('help-toggle').setAttribute('aria-expanded','false');
    for(const id of ['scene-stats','scene-legend'])$(id).hidden=false;$('detail-card').hidden=live||devices;
    $('scene-title').innerHTML='讓早晨的擁擠，<br><em>有跡可循。</em>';
    $('mode-tag').textContent='歷史回放 · 非即時路況';$('map-caption').innerHTML='<span class="compass">N ↑</span>真實路網位置 · 建物、高度與河寬示意<br><small>© OpenStreetMap contributors / ODbL · TDX 路段與 VD</small>';
@@ -119,7 +121,11 @@ export async function start(){
   $('island-road-strip').addEventListener('click',e=>{const b=e.target.closest('[data-heat-period],[data-heat-column]');if(!b)return;stop();index=Number(b.dataset.heatPeriod??b.dataset.heatColumn);render();});
   $('analysis-slot').onchange=()=>{stop();index=Number($('analysis-slot').value);render();};
   $('play').onclick=()=>{if(playing){stop();return;}if(reduced||!summary.dates.length)return;motionPaused=false;city?.setPaused(false);$('motion-toggle').setAttribute('aria-pressed','false');$('motion-toggle').innerHTML='Ⅱ <span>暫停動態</span>';playing=true;$('play').textContent='Ⅱ 暫停';$('play').setAttribute('aria-pressed','true');if(index===9)index=0;render();timer=setInterval(()=>{if(index>=9){stop();return;}index++;if(index===9)stop();render();},1800);};
-  $('home-view').onclick=()=>{city?.home();$('top-view').setAttribute('aria-pressed','false');};$('top-view').onclick=()=>$('top-view').setAttribute('aria-pressed',String(city?.bird()||false));
+  $('home-view').onclick=()=>{city?.home();$('top-view').setAttribute('aria-pressed','false');};$('zoom-in').onclick=()=>city?.zoomStep(.7);$('zoom-out').onclick=()=>city?.zoomStep(1/.7);
+  // A press nudges the map once; holding keeps it moving until release.
+  const panDirections={up:[0,1],down:[0,-1],left:[-1,0],right:[1,0]};let holdTimer=0;const endHold=()=>{clearTimeout(holdTimer);holdTimer=0;city?.panHold(0,0);};
+  for(const b of document.querySelectorAll('[data-pan]')){const [x,z]=panDirections[b.dataset.pan];b.addEventListener('pointerdown',e=>{if(e.button!==0)return;endHold();city?.panStep(x*.22,z*.22);holdTimer=setTimeout(()=>city?.panHold(x,z),320);b.setPointerCapture?.(e.pointerId);});for(const type of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(type,endHold);b.addEventListener('click',e=>{if(e.detail===0)city?.panStep(x*.22,z*.22);});b.addEventListener('contextmenu',e=>e.preventDefault());}
+  addEventListener('blur',endHold);$('top-view').onclick=()=>$('top-view').setAttribute('aria-pressed',String(city?.bird()||false));
   $('motion-toggle').onclick=()=>{motionPaused=!motionPaused;if(motionPaused)stop();city?.setPaused(motionPaused);$('motion-toggle').setAttribute('aria-pressed',String(motionPaused));$('motion-toggle').innerHTML=motionPaused?'▶ <span>恢復動態</span>':'Ⅱ <span>暫停動態</span>';};
   function help(open){$('help').hidden=!open;$('help-toggle').setAttribute('aria-expanded',String(open));if(open)stop();else{try{localStorage.setItem('neihu-island-help','seen');}catch{}}}
   $('help-toggle').onclick=()=>help($('help').hidden);$('help-close').onclick=()=>help(false);document.addEventListener('keydown',e=>{if(e.key==='Escape')help(false);});
@@ -139,18 +145,19 @@ export async function start(){
   });
   $('company-pick-cancel').onclick=()=>{city?.setCompanyPick(false);show('commute');};
   media.addEventListener('change',e=>{reduced=e.matches;if(reduced)stop();city?.setReduced(reduced);render();});document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
-  monitor=createMonitor({summary:summarize(DATA.observations,{scope:'all'}),getCity:()=>city,onState:(_,snapshot)=>{if(window.trafficIslandState)Object.assign(window.trafficIslandState,{view:'live',source:'live'});vdOverlay?.sync(snapshot);vdOverlay?.render();if(vdOverlay?.opened)$('live-detail').hidden=true;}});
+  const monitored=buildMonitoredSummary(DATA.geography.inventory,DATA.observations);
+  monitor=createMonitor({summary:monitored,history:DATA.observations,getCity:()=>city,onState:(_,snapshot)=>{if(window.trafficIslandState)Object.assign(window.trafficIslandState,{view:'live',source:'live'});vdOverlay?.sync(snapshot);vdOverlay?.render();if(vdOverlay?.opened)$('live-detail').hidden=true;}});
   deviceView=createDeviceView({DATA,getCity:()=>city,onSnapshot:next=>vdOverlay?.sync(next)});
   vdOverlay=createVDOverlay({DATA,getCity:()=>city,getContext:()=>summary?{dates:summary.dates,requested:summary.requested,index}:null,onSelection:(device,link)=>{
    selectedVD={device,link};selectedRoad=null;city?.selectRoad(null);
-   if(view==='monitor'){const id=link?.reference?.id;if(id&&allSummary?.rows.some(d=>d.id===id)&&!summary.rows.some(d=>d.id===id)){$('island-scope').value='all';recompute();$('scope-notice').hidden=false;$('scope-notice').textContent='已切換全部已盤點方向，顯示所選 VD 的對應路段。';}selected=summary.rows.some(d=>d.id===id)?id:null;$('island-route').value=selected||'';render();$('detail-card').hidden=true;}else if(view==='live'){monitor.select(allSummary.rows.some(d=>d.id===link?.id)?link.id:null,false);$('live-detail').hidden=true;}
+   if(view==='monitor'){const id=link?.reference?.id;if(id&&allSummary?.rows.some(d=>d.id===id)&&!summary.rows.some(d=>d.id===id)){$('island-scope').value='all';recompute();$('scope-notice').hidden=false;$('scope-notice').textContent='已切換全部已盤點方向，顯示所選 VD 的對應路段。';}selected=summary.rows.some(d=>d.id===id)?id:null;$('island-route').value=selected||'';render();$('detail-card').hidden=true;}else if(view==='live'){monitor.select(monitored.rows.some(d=>d.id===link?.id)?link.id:null,false,'overlay');$('live-detail').hidden=true;}
   },onClose:()=>{selectedVD=null;if(view==='monitor'){$('detail-card').hidden=false;render();}if(view==='live'){$('live-detail').hidden=false;monitor.render();}}});
   recompute();window.trafficIsland={show,recompute,selectRoad,selectRoute,selectGate,selectDevice:(id,link)=>view==='devices'?deviceView.select(id,link):vdOverlay.select(id,link),setPeriod(i){if(!Number.isInteger(i)||i<0||i>9)throw Error('超出多日時段');stop();index=i;render();},get scene(){return city;},get data(){return DATA;}};
   $('runtime-status').textContent='資料已載入 · 準備 3D';
   try{
    const module=await Promise.race([import('./traffic-island-scene.js'),new Promise((_,reject)=>setTimeout(()=>reject(Error('3D 元件載入逾時，請檢查網路或改用 2D 備援。')),20000))]);
-   city=module.createCity($('canvas-host'),DATA,selection=>{stop();if(selection.companyPosition){Object.assign(company,selection.companyPosition);city.setCompanyPosition(company);show('commute');return;}if(selection.road){selectRoad(selection.road);return;}if(selection.device){if(view==='devices')deviceView.select(selection.device,selection.link);else vdOverlay.select(selection.device,selection.link);return;}if(selection.route)selectRoute(selection.route);if(selection.gate)selectGate(selection.gate);},fail);city.setReduced(reduced);render();try{if(localStorage.getItem('neihu-island-help')!=='seen')help(true);}catch{help(true);}$('loading').hidden=true;document.body.dataset.renderStatus='ready';$('runtime-status').textContent='3D 已就緒 · 全路網模型配置；非實測車數／速度';
-   const initialView=new URLSearchParams(location.search).get('view');if(['commute','scenario','live','devices'].includes(initialView))show(initialView);
+   city=module.createCity($('canvas-host'),DATA,selection=>{if(selection.miss){if(view==='live')monitor.dismissPopup();return;}stop();if(selection.companyPosition){Object.assign(company,selection.companyPosition);city.setCompanyPosition(company);show('commute');return;}if(selection.road){selectRoad(selection.road);return;}if(selection.device){if(view==='devices')deviceView.select(selection.device,selection.link);else vdOverlay.select(selection.device,selection.link);return;}if(selection.route)selectRoute(selection.route,{source:'map'});if(selection.gate)selectGate(selection.gate,'map');},fail);city.setReduced(reduced);render();try{if(localStorage.getItem('neihu-island-help')!=='seen')help(true);}catch{help(true);}$('loading').hidden=true;document.body.dataset.renderStatus='ready';$('runtime-status').textContent='3D 已就緒 · 全路網模型配置；非實測車數／速度';
+   const initialView=new URLSearchParams(location.search).get('view')||(window.ISLAND_DATA?'monitor':'live');if(['monitor','analysis','quality','commute','scenario','live','devices'].includes(initialView))show(initialView);
   }catch(error){fail(error);}
  }catch(error){fail(error);}
 }
