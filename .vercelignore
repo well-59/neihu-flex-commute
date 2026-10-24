@@ -1,0 +1,7 @@
+# Upload only the site, its functions and the scripts they import; local data/ never leaves this machine
+/*
+!/web
+!/api
+!/scripts
+!/vercel.json
+/web/evidence/tests

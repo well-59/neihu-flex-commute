@@ -36,6 +36,14 @@ VD 位置頁以已保存盤點為起點，也可手動更新。128 個設備中 
 
 更新保存盤點後，執行 `node scripts/export-vd-inventory.mjs` 再執行 `node scripts/export-traffic-island.mjs`，同步設備頁與單檔。單檔含設備盤點，但不提供手動即時更新。
 
+### 部署（Vercel）
+
+`vercel.json` 以 `web/` 為靜態網站，`api/monitoring.py`（呼叫同一份 `monitoring-snapshot.py`，CDN 共用快取 60 秒）與 `api/places.mjs`（同一份 Photon 搜尋與限流，只接受同網域頁面）取代本機 API；`.vercelignore` 只上傳 `web/`、`api/`、`scripts/`，本機 `data/` 不上傳。歷史協商頁的 Claude CLI 橋接不部署。
+
+```sh
+npx vercel@latest deploy --prod
+```
+
 `negotiation-server.mjs` 是沿用的本機預覽服務名稱，也保留歷史協商頁的可選 Claude CLI 橋接；目前 3D 功能不依賴 Claude。它只監聽本機，不是公開部署用伺服器。
 
 ## 目前資料夾

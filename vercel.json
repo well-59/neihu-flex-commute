@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "outputDirectory": "web",
+  "regions": ["hkg1"],
+  "functions": {
+    "api/monitoring.py": {"maxDuration": 60},
+    "api/places.mjs": {"maxDuration": 20, "includeFiles": "web/data/neihu-road-network.js"}
+  },
+  "headers": [
+    {"source": "/(.*)", "headers": [{"key": "X-Content-Type-Options", "value": "nosniff"}]}
+  ]
+}

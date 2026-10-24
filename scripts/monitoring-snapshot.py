@@ -194,9 +194,8 @@ def build_snapshot(feeds, sources, now):
                              '圖中動畫只使用既有幾何與相同設備／LinkID／方向對照；新增設備仍需補圖資'])
 
 
-def collect(prefix=None):
+def collect(prefix=None, cache=ROOT / 'data/monitoring'):
     sources, feeds = {}, {}
-    cache = ROOT / 'data/monitoring'
     cache.mkdir(parents=True, exist_ok=True)
     def fetch(name):
         url = BASE + name + '.xml'
