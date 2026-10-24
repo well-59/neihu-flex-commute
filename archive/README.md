@@ -31,3 +31,7 @@ node --test archive/pre-v8/tests/observatory.test.cjs
 - [收斂前單檔](neihu-dashboard-before-focus.html)、`preview.png`、`comparison-preview.png`。
 
 目前仍使用的官方調查、原始 XLSX 與重建工具保留在 [web/evidence](../web/evidence/README.md)，不因資料年份較舊而移走。
+
+## 舊分支整合（2026-10-24）
+
+[v3 概念稿](pre-v8/docs/DESIGN-v3-20261022.md) 原樣保存自 `878d28e`（原 `docs/concept-v3` 分支）；既有 v2 概念稿仍保留。文中的錯峰效果、容量與排隊推算是當時的模型主張，未在本次整理重新驗證，不作為現行政策效益證據。
