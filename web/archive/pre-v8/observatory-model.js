@@ -1,7 +1,7 @@
 /* Scenario arithmetic is separate from observations and company commitments. */
 (function(root) {
   'use strict';
-  const queue = typeof module !== 'undefined' && module.exports ? require('./negotiation-model.js').queue : root.Negotiation.queue;
+  const queue = typeof module !== 'undefined' && module.exports ? require('../../negotiation-model.js').queue : root.Negotiation.queue;
   const sum = xs => xs.reduce((a,b)=>a+b,0);
   const time = minutes => `${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;
   const inDisplayWindow=t=>t>='07:00'&&t<'10:30';

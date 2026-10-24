@@ -1,4 +1,4 @@
-> **後續實作更新（2026-10-24）**：依使用者「有問題的不要搬，先出一版」已完成 v6 歷史觀測第一版；八 KPI、全路段熱圖、時段地圖及品質明細可操作，見 [README v6](README.md#2026-10-24v6-全路段觀測台)。以下保留當時需求與審查，不把即時／分車種／效益模型標為完成。
+> **後續實作更新（2026-10-24）**：依使用者「有問題的不要搬，先出一版」已完成 v6 歷史觀測第一版；八 KPI、全路段熱圖、時段地圖及品質明細可操作，見 [README v6](README-before-cleanup.md#2026-10-24v6-全路段觀測台)。以下保留當時需求與審查，不把即時／分車種／效益模型標為完成。
 
 # 2026-10-24：全路段觀測、即時監控與獨立錯峰情境
 
@@ -12,7 +12,7 @@
 
 **UNKNOWN**：監控先做晨峰、早晚通勤或全天，已提問，尚待明確回覆。「全部都要做」明確回答的是兩種地圖模式，不自行解讀成已選定全天服務／更新頻率／部署預算。
 
-本輪先完成 API 盤點、分析與雙方審查記錄，不將建議流程寫成已實作。隊友來源版本：`ed126ccf4fb8e2d79a2cbe1047509b7540167901`。API 清單見 [TDX-API-CATALOG.md](TDX-API-CATALOG.md)／[JSON](TDX-API-CATALOG.json)。前版整合狀態見 [TEAMMATE-INTEGRATION.md](TEAMMATE-INTEGRATION.md)。
+本輪先完成 API 盤點、分析與雙方審查記錄，不將建議流程寫成已實作。隊友來源版本：`ed126ccf4fb8e2d79a2cbe1047509b7540167901`。API 清單見 [TDX-API-CATALOG.md](../../../docs/TDX-API-CATALOG.md)／[JSON](../../../docs/TDX-API-CATALOG.json)。前版整合狀態見 [TEAMMATE-INTEGRATION.md](../../../docs/TEAMMATE-INTEGRATION.md)。
 
 ## 我們要回答的問題
 

@@ -2,7 +2,7 @@
 
 記錄日期：2026-10-24。來源為隊友 repo `ed126ccf4fb8e2d79a2cbe1047509b7540167901` 的程式與隨附快照。**FACT：程式中使用的 URL／欄位；不是本輪重新呼叫成功的保證。外部 API、權限、額度及最新 schema：UNVERIFIED。**
 
-機器可讀清單：[TDX-API-CATALOG.json](TDX-API-CATALOG.json)。改版需求與審查：[DASHBOARD-REQUIREMENTS-20261024.md](DASHBOARD-REQUIREMENTS-20261024.md)。
+機器可讀清單：[TDX-API-CATALOG.json](TDX-API-CATALOG.json)。改版需求與審查：[DASHBOARD-REQUIREMENTS-20261024.md](../archive/pre-v8/docs/DASHBOARD-REQUIREMENTS-20261024.md)。
 
 隊友 repo 唯讀；不複製憑證、不在隊友目錄執行資料更新。後續下載／彙整管線只能在我方專案執行，API Token 不進瀏覽器或 Git。
 

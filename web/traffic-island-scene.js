@@ -1,6 +1,8 @@
+import {createDeviceLayer} from './vd-location-layer.js';
 import * as THREE from 'three';
 import {createVehicleFleet} from './traffic-vehicles.js';
 import {buildDisplayNetwork,matchObservations} from './traffic-network.js';
+import {monitoredPaths} from './traffic-monitor-model.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {CSS2DRenderer,CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -94,11 +96,12 @@ export function createCity(host,DATA,onSelect,onError){
  for(const l of DATA.geography.locations.records){const pos=project(l.lon,l.lat,.78),mesh=new THREE.Mesh(beaconGeo,material(0x386b5a));mesh.position.copy(pos);mesh.userData.gate=l.gate;city.add(mesh);pickables.push(mesh);beacons.set(l.gate,mesh);if(DATA.presentation.corridors.some(c=>c.gate===l.gate)){const info=DATA.presentation.corridors.find(c=>c.gate===l.gate);staticLabels.push(addLabel(info.short, pos.clone().add(new THREE.Vector3(0,.5,0)),{className:'major',gate:l.gate}));}}
  const directionalGroup=new THREE.Group();city.add(directionalGroup);const fleet=createVehicleFleet(directionalGroup);
  let reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,motionPaused=false,active=true,dirty=true,flight=null,raf=0,last=0,elapsed=0,mode='monitor',selectedId=null,frameCount=0,topView=false,inFrame=false;
+ const deviceLayer=createDeviceLayer(city,project,onSelect,wake,flyTo);
  function clearRoutes(){for(const entry of routeMeshes.values()){city.remove(entry.group);entry.group.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});}routeMeshes.clear();for(const l of routeLabels){city.remove(l.object);l.el.remove();}routeLabels.length=0;}
  let bindings=[];
  const makeCurve=points=>{const c=new THREE.CurvePath();for(let i=1;i<points.length;i++){const a=new THREE.Vector3(...points[i-1]),b=new THREE.Vector3(...points[i]);if(a.distanceTo(b)>.0001)c.add(new THREE.LineCurve3(a,b));}return c;};
  function routeFocusPoint(entry){const location=entry.direction.position,target=location?project(location.lon,location.lat):null;let chosen=null,best=Infinity;for(const curve of entry.curves){const p=curve.getPoint(.5),score=target?Math.hypot(p.x-target.x,p.z-target.z):0;if(score<best){chosen=p;best=score;}}return chosen;}
- function drawRoutes(summary,index,selected){
+ function drawRoutes(summary,index,selected,monitoring=null){
   selectedId=selected;const ids=summary.representatives.map(d=>d.id).join('|');
   if(ids!==drawRoutes.key){clearRoutes();drawRoutes.key=ids;bindings=matchObservations(network,summary.representatives);
    for(const d of summary.representatives){routeMeshes.set(d.id,{group:new THREE.Group(),lines:[],outlines:[],curves:[],direction:d});}
@@ -112,9 +115,11 @@ export function createCity(host,DATA,onSelect,onError){
   }
   for(let i=pickables.length-1;i>=0;i--)if(pickables[i].userData.route)pickables.splice(i,1);
   const shares=new Map(summary.heat.map(r=>[r.direction.id,r.periods[index]?.share??null]));
-  for(const [id,entry] of routeMeshes){const share=shares.get(id)??null;entry.lines.forEach(m=>{m.material.color.set(shareColor(share));pickables.push(m);});entry.outlines.forEach(m=>m.visible=id===selected);}
+  const readings=new Map((monitoring||[]).map(r=>[r.id,r]));
+  for(const [id,entry] of routeMeshes){const share=shares.get(id)??null;entry.lines.forEach(m=>{m.material.color.set(monitoring?(readings.get(id)?.color||'#9fa8a5'):shareColor(share));pickables.push(m);});entry.outlines.forEach(m=>m.visible=id===selected);}
   const paths=[];
-  if(summary.dates.length&&summary.totals.classified>0)for(const path of bindings){let sum=0,length=0;for(const s of path.segments){const share=shares.get(s.route);if(share==null)continue;const l=new THREE.Vector3(...s.a).distanceTo(new THREE.Vector3(...s.b));sum+=share*l;length+=l;}
+  if(monitoring)for(const path of monitoredPaths(bindings,monitoring))paths.push({...path,curve:makeCurve(path.points)});
+  else if(summary.dates.length&&summary.totals.classified>0)for(const path of bindings){let sum=0,length=0;for(const s of path.segments){const share=shares.get(s.route);if(share==null)continue;const l=new THREE.Vector3(...s.a).distanceTo(new THREE.Vector3(...s.b));sum+=share*l;length+=l;}
    paths.push({curve:makeCurve(path.points),route:path.id,names:path.names,sources:path.sources,bridge:path.bridge,context:!length,share:length?sum/length:null,motorcycles:path.motorcycles,highway:path.highway,closed:path.closed});}
   fleet.rebuild(paths,elapsed);
   for(const l of routeLabels){city.remove(l.object);l.el.remove();}routeLabels.length=0;
@@ -140,26 +145,27 @@ export function createCity(host,DATA,onSelect,onError){
   for(const m of ['car','moto'])for(let i=0;i<14;i++){const a=configuration.background[m][i]/max*maxHeight,b=plan.after[m][i]/max*maxHeight;beforeBars[m][i].scale.y=Math.max(.008,a);beforeBars[m][i].position.y=.45+a/2;bars[m][i].scale.y=Math.max(.008,b);bars[m][i].position.y=.45+b/2;}
   scenarioMotion=plan.groups.map((g,i)=>{const target=timeSlots[configuration.slots.indexOf(g.to)],from=tokens[i].mesh.position.x;tokens[i].label.el.textContent=g.counts.car+g.counts.moto?`${g.label} 移轉 汽${g.counts.car}／機${g.counts.moto}`:`${g.label} 未移轉`;if(reduced||motionPaused)tokens[i].mesh.position.x=target;return {from,target,start:performance.now()};});dirty=true;wake();
  }
- function setMode(next){mode=next;city.visible=next!=='scenario';sandbox.visible=next==='scenario';[...staticLabels,...routeLabels].forEach(l=>l.object.visible=next!=='scenario');scenarioLabels.forEach(l=>l.object.visible=next==='scenario');home();dirty=true;wake();}
- function resolveLabelCollisions(){const occupied=[];const panelRects=[...document.querySelectorAll('.detail-card:not([hidden]),.scenario-card:not([hidden]),.scenario-results:not([hidden]),.scene-heading')].map(el=>el.getBoundingClientRect());
+ function setMode(next){mode=next;deviceLayer.setActive(next==='devices');directionalGroup.visible=next!=='devices';for(const mesh of beacons.values())mesh.visible=next!=='devices';if(next==='devices'){clearRoutes();drawRoutes.key='';}
+city.visible=next!=='scenario';sandbox.visible=next==='scenario';[...staticLabels,...routeLabels].forEach(l=>l.object.visible=next!=='scenario'&&(next!=='devices'||!l.gate));scenarioLabels.forEach(l=>l.object.visible=next==='scenario');home();dirty=true;wake();}
+ function resolveLabelCollisions(){const occupied=mode==='devices'?[...document.querySelectorAll('.vd-label')].map(el=>el.getBoundingClientRect()):[];const panelRects=[...document.querySelectorAll('.detail-card:not([hidden]),.scenario-card:not([hidden]),.scenario-results:not([hidden]),.scene-heading')].map(el=>el.getBoundingClientRect());
   const all=mode==='scenario'?[...scenarioLabels.filter(l=>l.el.classList.contains('group')),...scenarioLabels.filter(l=>!l.el.classList.contains('group'))]:[...routeLabels,...staticLabels.filter(l=>l.gate),...staticLabels.filter(l=>!l.gate)];for(const l of all){l.el.style.visibility='visible';const r=l.el.getBoundingClientRect();const hit=[...occupied,...panelRects].some(b=>r.left<b.right+5&&r.right>b.left-5&&r.top<b.bottom+5&&r.bottom>b.top-5);if(hit)l.el.style.visibility='hidden';else occupied.push(r);}
  }
  function animate(now){raf=0;if(!active||document.hidden)return;inFrame=true;const dt=Math.min(.08,(now-(last||now))/1000);last=now;if(!reduced&&!motionPaused)elapsed+=dt;
   if(flight){const t=clamp((now-flight.start)/800,0,1),ease=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;camera.position.lerpVectors(flight.from,flight.to,ease);controls.target.lerpVectors(flight.fromTarget,flight.target,ease);if(t===1)flight=null;dirty=true;}
   const changed=controls.update();if(changed)dirty=true;
-  if(!reduced&&!motionPaused&&mode!=='scenario'){fleet.update(elapsed);dirty=true;}
+  if(!reduced&&!motionPaused&&mode!=='scenario'&&mode!=='devices'){fleet.update(elapsed);dirty=true;}
   if(mode==='scenario')for(let i=0;i<scenarioMotion.length;i++){const m=scenarioMotion[i],t=reduced||motionPaused?1:clamp((now-m.start)/950,0,1);tokens[i].mesh.position.x=THREE.MathUtils.lerp(m.from,m.target,t*t*(3-2*t));tokens[i].label.object.position.copy(tokens[i].mesh.position).add(new THREE.Vector3(0,.55,0));if(t<1)dirty=true;}
   if(dirty){renderer.render(scene,camera);labels.render(scene,camera);const compass=document.querySelector('.compass');if(compass){const a=controls.target.clone().project(camera),b=controls.target.clone().add(new THREE.Vector3(0,0,-1)).project(camera);compass.style.display='inline-block';compass.style.transform=`rotate(${Math.atan2(b.x-a.x,b.y-a.y)*180/Math.PI}deg)`;}resolveLabelCollisions();dirty=false;frameCount++;}
-  const moving=!reduced&&!motionPaused&&(mode!=='scenario'||scenarioMotion.some(m=>now-m.start<950));inFrame=false;if(!raf&&(moving||flight||changed))raf=requestAnimationFrame(animate);
+  const moving=!reduced&&!motionPaused&&(mode!=='devices'&&(mode!=='scenario'||scenarioMotion.some(m=>now-m.start<950)));inFrame=false;if(!raf&&(moving||flight||changed))raf=requestAnimationFrame(animate);
  }
  function wake(){dirty=true;if(!inFrame&&!raf&&active&&!document.hidden)raf=requestAnimationFrame(animate);}
  controls.addEventListener('change',wake);controls.addEventListener('start',()=>{flight=null;});
- let down=null;renderer.domElement.addEventListener('pointerdown',e=>{flight=null;down={x:e.clientX,y:e.clientY};});renderer.domElement.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down.x,e.clientY-down.y)>6||mode==='scenario'){down=null;return;}down=null;const r=renderer.domElement.getBoundingClientRect(),mouse=new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);const ray=new THREE.Raycaster();ray.setFromCamera(mouse,camera);const hit=ray.intersectObjects(pickables,false)[0];if(hit)onSelect(hit.object.userData.route?{route:hit.object.userData.route}:{gate:hit.object.userData.gate});});
+ let down=null;renderer.domElement.addEventListener('pointerdown',e=>{flight=null;down={x:e.clientX,y:e.clientY};});renderer.domElement.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down.x,e.clientY-down.y)>6||mode==='scenario'){down=null;return;}down=null;const r=renderer.domElement.getBoundingClientRect(),mouse=new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);const ray=new THREE.Raycaster();ray.setFromCamera(mouse,camera);if(mode==='devices'){deviceLayer.pick(ray);return;}const hit=ray.intersectObjects(pickables,false)[0];if(hit)onSelect(hit.object.userData.route?{route:hit.object.userData.route}:{gate:hit.object.userData.gate});});
  host.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)||e.target!==host)return;e.preventDefault();flight=null;const offset=camera.position.clone().sub(controls.target),s=new THREE.Spherical().setFromVector3(offset);if(e.key==='ArrowLeft')s.theta-=.13;if(e.key==='ArrowRight')s.theta+=.13;if(e.key==='ArrowUp')s.phi-=.08;if(e.key==='ArrowDown')s.phi+=.08;s.phi=clamp(s.phi,controls.minPolarAngle,controls.maxPolarAngle);camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(s));wake();});
  function resize(){const width=host.clientWidth,height=host.clientHeight;camera.aspect=width/height;camera.updateProjectionMatrix();renderer.setSize(width,height);labels.setSize(width,height);wake();}
  const observer=new ResizeObserver(resize);observer.observe(host);document.addEventListener('visibilitychange',()=>{last=0;wake();});
  resize();camera.position.set(12,42,47);controls.target.set(0,0,0);home();
- return {drawRoutes,focusRoute,home,bird,setScenario,setMode,project,renderer,camera,hasRoute(id){return !!routeMeshes.get(id)?.lines.length;},vehicleState(){return {...fleet.inspect(),network:{paths:network.paths.length,sourceCount:network.sourceCount,edgeCount:network.edgeCount}};},
+ return {drawRoutes,drawDevices:deviceLayer.draw,focusDevice:deviceLayer.focus,deviceState:deviceLayer.inspect,focusRoute,home,bird,setScenario,setMode,project,renderer,camera,hasRoute(id){return !!routeMeshes.get(id)?.lines.length;},vehicleState(){return {...fleet.inspect(),network:{paths:network.paths.length,sourceCount:network.sourceCount,edgeCount:network.edgeCount}};},
   setReduced(value){reduced=value;if(value&&flight){camera.position.copy(flight.to);controls.target.copy(flight.target);flight=null;}wake();},
   setPaused(value){motionPaused=value;wake();},setActive(value){active=value;last=0;if(!value&&raf){cancelAnimationFrame(raf);raf=0;}else wake();},
   stats(){return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,frameCount,routeCount:routeMeshes.size,mode,reduced,motionPaused,active,seed:DATA.presentation.seed};},

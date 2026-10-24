@@ -3,6 +3,7 @@ import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js'
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 import {vehicleLayout,tripPosition} from './traffic-flow.js';
+import {observedVehicleLayout} from './traffic-monitor-model.js';
 export {vehicleLayout,tripPosition} from './traffic-flow.js';
 
 export function createVehicleFleet(parent){
@@ -33,9 +34,9 @@ export function createVehicleFleet(parent){
  }
  function rebuild(next,time=0){
   paths=next;records=[];
-  for(const p of next){const length=p.curve.getLength();for(const v of vehicleLayout(length,p.share,p))records.push({...v,curve:p.curve,length,route:p.route,context:!!p.context,closed:!!p.closed,scale:Math.min(.62,length/.40)});}
+  for(const p of next){const length=p.curve.getLength();const layout=p.monitoring?observedVehicleLayout(length,p.monitoring,p):vehicleLayout(length,p.share,p);for(const v of layout)records.push({...v,curve:p.curve,length,route:p.route,context:!!p.context,closed:!!p.closed,scale:Math.min(.62,length/.40)});}
   for(const kind of ['car','moto']){if(meshes[kind]){parent.remove(meshes[kind]);meshes[kind].dispose();}const count=records.filter(p=>p.kind===kind).length;const mesh=new THREE.InstancedMesh(geometries[kind],material,count);mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.frustumCulled=false;mesh.castShadow=false;meshes[kind]=mesh;parent.add(mesh);}
   update(time);
  }
- return {rebuild,update,inspect(){const samples={};for(const [kind,mesh] of Object.entries(meshes)){if(mesh.count){const matrix=new THREE.Matrix4();mesh.getMatrixAt(0,matrix);samples[kind]=matrix.elements.slice(12,15);}}return {samples,cars:records.filter(p=>p.kind==='car').length,motorcycles:records.filter(p=>p.kind==='moto').length,paths:paths.map(p=>({route:p.route,names:p.names,sources:p.sources,bridge:p.bridge,closed:!!p.closed,context:!!p.context,share:p.share,length:p.curve.getLength(),start:p.curve.getPoint(0).toArray(),end:p.curve.getPoint(1).toArray(),vehicles:records.filter(v=>v.curve===p.curve).map(v=>({kind:v.kind,phase:v.phase,speed:v.speed}))}))};}};
+ return {rebuild,update,inspect(){const samples={};for(const [kind,mesh] of Object.entries(meshes)){if(mesh.count){const matrix=new THREE.Matrix4();mesh.getMatrixAt(0,matrix);samples[kind]=matrix.elements.slice(12,15);}}return {samples,cars:records.filter(p=>p.kind==='car').length,motorcycles:records.filter(p=>p.kind==='moto').length,paths:paths.map(p=>({route:p.route,observationId:p.observationId||null,monitoring:!!p.monitoring,names:p.names,sources:p.sources,bridge:p.bridge,closed:!!p.closed,context:!!p.context,share:p.share,length:p.curve.getLength(),start:p.curve.getPoint(0).toArray(),end:p.curve.getPoint(1).toArray(),vehicles:records.filter(v=>v.curve===p.curve).map(v=>({kind:v.kind,phase:v.phase,speed:v.speed}))}))};}};
 }

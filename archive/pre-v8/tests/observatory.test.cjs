@@ -1,5 +1,5 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
-const M=require('../web/observatory-model.js'),ctx={window:{}};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../web/data/neihu-data.js'),'utf8'),ctx);const D=JSON.parse(JSON.stringify(ctx.window.NEIHU_DATA));
+const M=require('../../../web/archive/pre-v8/observatory-model.js'),ctx={window:{}};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../../web/data/neihu-data.js'),'utf8'),ctx);const D=JSON.parse(JSON.stringify(ctx.window.NEIHU_DATA));
 const sum=a=>a.reduce((s,v)=>s+v,0);
 test('allocation comparison preserves cohorts, exposes burden, and keeps unfavorable results',()=>{
  const original=JSON.stringify(D);
@@ -30,7 +30,7 @@ test('allocation comparison preserves cohorts, exposes burden, and keeps unfavor
  assert.equal(JSON.stringify(D),original);
 });
 test('bounded allocation search matches an independent sixteen-plan enumeration',()=>{
- const queue=require('../web/negotiation-model.js').queue;
+ const queue=require('../../../web/negotiation-model.js').queue;
  for(const g of D.gates){
   const r=M.scenario(D,{gateId:g.id,pct:15,shift:30}),candidates=[];
   for(let mask=0;mask<16;mask++){

@@ -134,17 +134,17 @@
 
 以下為本次規格的本機依據，不能取代原始分鐘重建或外部 API 當次驗證：
 
-- [目前實作與驗證紀錄](README.md)：最新段落的單一地圖、四頁、補路與輸出口徑。
+- [目前實作與驗證紀錄](../archive/pre-v8/docs/README-before-cleanup.md)：最新段落的單一地圖、四頁、補路與輸出口徑。
 - [隊友整合紀錄](TEAMMATE-INTEGRATION.md)：來源版本、日期與車種缺口；較早介面描述以現行程式為準。
 - [API 位置清單](TDX-API-CATALOG.md)：程式所用來源，非本輪重新呼叫成功保證。
-- [觀測模型](web/route-evidence-model.js)、[合成配置模型](web/planning-model.js)、[多日快照](web/data/route-clarity.json)：本機資料契約與目前計算界線。
+- [觀測模型](../web/route-evidence-model.js)、[合成配置模型](../web/planning-model.js)、[多日快照](../web/data/route-clarity.json)：本機資料契約與目前計算界線。
 
 **UNVERIFIED／尚缺**：即時資料串接、近期完整分車種時序、原始分鐘品質重驗、多日 09:30–10:30、完整橋梁斷面與高快速道路覆蓋、道路轉向拓樸、實際企業參與、速度／旅行時間／營運效益，以及 3D 跨裝置效能。以上缺口不以更生動的場景補成事實。
 
 
 ## 第一版實作紀錄（2026-10-24）
 
-**COMPLETED：本機第一版；不是完整即時交通系統。** 已建立 `web/traffic-island.html` 與可攜單檔 `web/traffic-island-standalone.html`，並由原 2D 儀表板提供入口。實作與驗證細節見 [README v8 紀錄](README.md)。
+**COMPLETED：本機第一版；不是完整即時交通系統。** 已建立 `web/traffic-island.html` 與可攜單檔 `web/traffic-island-standalone.html`，並由原 2D 儀表板提供入口。實作與驗證細節見 [README v8 紀錄](../archive/pre-v8/docs/README-before-cleanup.md)。
 
 已接線：真實道路位置的模型城市、歷史分時上色、三走廊、四頁共用觀測選取、獨立合成需求時間台、單檔、手機排版、鍵盤、動態減量及錯誤備援。地圖外方向保留數據並告知無法定位；範圍整體與單路段占比分別標示。
 

@@ -1,0 +1,117 @@
+{
+  "sourceCommit": "b398fddf491006649559bc7eae9e0beb13bf1a85",
+  "date": "2026-10-24",
+  "note": "Moved historical material; relative links may be adapted. Original bytes remain recoverable at sourceCommit.",
+  "files": [
+    {
+      "from": "TRAFFIC-ISLAND-3D-SPEC.md",
+      "to": "docs/TRAFFIC-ISLAND-3D-SPEC.md",
+      "originalSHA256": "a6ab7afa435a894c9413b299e350149c5bbe867be865f1ba2800931bb36c2e19"
+    },
+    {
+      "from": "TDX-API-CATALOG.md",
+      "to": "docs/TDX-API-CATALOG.md",
+      "originalSHA256": "0cf644b50f18ad6f65668ffc8a6a954d943e06b99549e9140d01910bdbdf6df3"
+    },
+    {
+      "from": "TDX-API-CATALOG.json",
+      "to": "docs/TDX-API-CATALOG.json",
+      "originalSHA256": "8762254623c844891b2942264c8f7978093c83b7ee6b423be563fc779eff38af"
+    },
+    {
+      "from": "TEAMMATE-INTEGRATION.md",
+      "to": "docs/TEAMMATE-INTEGRATION.md",
+      "originalSHA256": "fca23b9fe25d65bf78d53e64f85bb8e22cd9aec3cff62644943869630556b6ec"
+    },
+    {
+      "from": "DESIGN.md",
+      "to": "archive/pre-v8/docs/DESIGN.md",
+      "originalSHA256": "79d7d6fa8c3c993abe897761de2bff7ab93228b29f062225693166bb94c330ac"
+    },
+    {
+      "from": "INTEGRATION.md",
+      "to": "archive/pre-v8/docs/INTEGRATION.md",
+      "originalSHA256": "60bd3b95bf1fdac062a6227e76676f22a3e44a872dff91bde004d89037550b36"
+    },
+    {
+      "from": "CLAUDE-REVIEW-20261024.md",
+      "to": "archive/pre-v8/docs/CLAUDE-REVIEW-20261024.md",
+      "originalSHA256": "954dcdf1416612f3331f1dd93f467fa2abdb15e81e5a2b87a0064f2ac175aa52"
+    },
+    {
+      "from": "DASHBOARD-REQUIREMENTS-20261024.md",
+      "to": "archive/pre-v8/docs/DASHBOARD-REQUIREMENTS-20261024.md",
+      "originalSHA256": "cda8422829f9e5b260934ddc9747094a561eafed33ef19fdc4042ac070c2cecc"
+    },
+    {
+      "from": "README.md",
+      "to": "archive/pre-v8/docs/README-before-cleanup.md",
+      "originalSHA256": "e9a33f222b52bb1f838e81207cff313357a83ef6ce56c5b24bdfc63c4cab3671"
+    },
+    {
+      "from": "web/index.html",
+      "to": "web/archive/pre-v8/index.html",
+      "originalSHA256": "c3dc3de3109f29147a3c99bf45b42d20a6ef0aea92c41839884292cef52e0bf3"
+    },
+    {
+      "from": "web/observatory.html",
+      "to": "web/archive/pre-v8/observatory.html",
+      "originalSHA256": "89ef8fee11f4f99c838749cec9fcba7c4640563b58b227c314cbe3071e21fbc9"
+    },
+    {
+      "from": "web/observatory.js",
+      "to": "web/archive/pre-v8/observatory.js",
+      "originalSHA256": "31138f8d30c81c3389cdc5f99771f2ebc0abbc0c215fc072e53ed500ef960fed"
+    },
+    {
+      "from": "web/observatory-model.js",
+      "to": "web/archive/pre-v8/observatory-model.js",
+      "originalSHA256": "afa0e7d83a709fc9089a12158b616d0533e7c53bbf31e607f2cb26110c869f29"
+    },
+    {
+      "from": "web/negotiation.html",
+      "to": "web/archive/pre-v8/negotiation.html",
+      "originalSHA256": "56a209e52fe70c0f82ee5acea6e226bce3a6bd4301cbdf82d68c98b97a8802d7"
+    },
+    {
+      "from": "web/negotiation.css",
+      "to": "web/archive/pre-v8/negotiation.css",
+      "originalSHA256": "8d44d9b98f0336e0c2a5d414933c78370fbee9980d31d07e47efce67059d7c50"
+    },
+    {
+      "from": "web/negotiation.js",
+      "to": "web/archive/pre-v8/negotiation.js",
+      "originalSHA256": "00aebd2fffebeac0754b5deed50b1ab0449d8b0af8d9d9278f19a182d9a83070"
+    },
+    {
+      "from": "web/city-scene.js",
+      "to": "web/archive/pre-v8/city-scene.js",
+      "originalSHA256": "15ba3e7042bc5254ac726d6fdcd14c74b1aabfb0e7f5a67f7b21274b1e5b0190"
+    },
+    {
+      "from": "tests/integration-browser.cjs",
+      "to": "archive/pre-v8/tests/integration-browser.cjs",
+      "originalSHA256": "2769e57848e337db06bc13c029ebcd6888ef518ac10b91d963923593c0b54fcc"
+    },
+    {
+      "from": "tests/observatory-browser.cjs",
+      "to": "archive/pre-v8/tests/observatory-browser.cjs",
+      "originalSHA256": "5f9466393359e1a5f52ae4bc0ba8b758628cbb70df903a86a5eb9111a3a1f462"
+    },
+    {
+      "from": "tests/negotiation-browser.cjs",
+      "to": "archive/pre-v8/tests/negotiation-browser.cjs",
+      "originalSHA256": "a69c82956a41958c05a4dae274ba97a2dfd91c89555e66e7eb85481d05084399"
+    },
+    {
+      "from": "tests/observatory.test.cjs",
+      "to": "archive/pre-v8/tests/observatory.test.cjs",
+      "originalSHA256": "8c943091632a7c565ca1d9ca62c630a958ed6d623750849b123febd9f43d078c"
+    },
+    {
+      "from": "scripts/make-sample-data.mjs",
+      "to": "archive/pre-v8/scripts/make-sample-data.mjs",
+      "originalSHA256": "f49ee43c9e93dc02b9fa9ac4ce6b8709a446e962df143fdcc92c8b555284a908"
+    }
+  ]
+}
