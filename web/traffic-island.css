@@ -19,3 +19,11 @@
 
 /* Keep metric units next to values in the historical analysis. */
 #island-heat .traffic-metric{white-space:nowrap;font-variant-numeric:tabular-nums}#island-heat .traffic-metric strong{font-size:16px;font-weight:600}#island-heat th small{display:block;font-weight:400;color:var(--muted);margin-top:4px}.metric-guide{font-size:13px;line-height:1.8;color:var(--muted)}.metric-guide strong{color:var(--ink)}
+
+.road-hover{position:absolute;z-index:8;pointer-events:none;background:#fffdf6f5;color:#294c40;border:1px solid #becbbb;border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.7;white-space:pre-line;max-width:290px;box-shadow:0 4px 18px #253a3022}.road-coverage{position:absolute;left:28px;bottom:72px;max-width:420px;font-size:10px;line-height:1.6;color:#4c5c4e;pointer-events:none}.island-road-strip{padding:20px 30px;background:#f4f2e8}.island-road-strip .period-scroll{max-height:200px}.island-road-strip .period-intro h2{font-size:19px}.island-road-strip .period-intro p{font-size:12px}.island-road-strip>p{font-size:13px;color:#596357}@media(max-width:800px){.road-coverage{position:relative;left:auto;bottom:auto;grid-column:1/-1;max-width:none;margin:10px 15px}.island-road-strip{padding:16px}}
+
+.history-active .scene-legend .low{background:#c7dfd0}.history-active .scene-legend .high{background:#dc947f}.history-active .scene-legend .unknown{background:#e3e6df}
+
+.road-coverage{position:static;max-width:none;margin:0;padding:12px 30px 0;background:#f4f2e8;font-size:11px;color:#4c5c4e}@media(max-width:800px){.road-coverage{margin:0;padding:12px 16px 0}}
+
+.vd-overlay-note{margin:0;padding:10px 30px;background:#edf4f1;color:#25647a;font-size:12px;line-height:1.7}.vd-overlay-card:not([hidden]){display:block;max-height:calc(100% - 50px);overflow:auto}.vd-overlay-close{float:right;min-width:40px;min-height:40px;font-size:22px}.vd-overlay-card .vd-directions{gap:4px}.vd-overlay-card .vd-directions button{font-size:10px;overflow-wrap:anywhere}.vd-overlay-card .vd-times dd{overflow-wrap:anywhere}.vd-overlay-reading strong{display:block;font-size:28px;color:#355f50;margin-top:8px}#vd-overlay-toggle[aria-pressed=true]{background:#dcece8;color:#237e9b}@media(max-width:800px){.vd-overlay-note{padding:10px 16px}.vd-overlay-card:not([hidden]){max-height:none}.scene-controls{gap:5px}#vd-overlay-toggle{min-width:48px}}

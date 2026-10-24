@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict'),fs=require('node:fs');
 (async()=>{
- const pages=await(await fetch('http://127.0.0.1:9342/json')).json(),ws=new WebSocket(pages.find(p=>p.type==='page').webSocketDebuggerUrl);
+ const pages=await(await fetch(process.env.NEIHU_3D_CDP||'http://127.0.0.1:9342/json')).json(),ws=new WebSocket(pages.find(p=>p.type==='page').webSocketDebuggerUrl);
  await new Promise(r=>ws.onopen=r);let id=0;const pending=new Map(),errors=[],requests=[];
  ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.id){const p=pending.get(m.id);pending.delete(m.id);m.error?p.reject(m.error):p.resolve(m.result);}if(m.method==='Runtime.exceptionThrown')errors.push(m.params);if(m.method==='Network.requestWillBeSent')requests.push(m.params.request.url);};
  const send=(method,params={})=>new Promise((resolve,reject)=>{pending.set(++id,{resolve,reject});ws.send(JSON.stringify({id,method,params}));});
@@ -31,7 +31,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
   const outside=await run("(()=>{const rows=trafficIsland.data.geography.inventory.rows;return rows.find(r=>r.position.lon>121.605||r.position.lat>25.091||r.position.lat<25.047).vdId})()");await run(`trafficIsland.selectDevice(${JSON.stringify(outside)})`);assert.match(await text('vd-map-note'),/超出目前 3D/);assert.match(await run("document.querySelector('#vd-external').href"),/openstreetmap.org/);
   await run("trafficIsland.selectDevice('VQBUL20','6005320200000A');trafficIsland.scene.home()");await run('new Promise(r=>setTimeout(r,1200))');const count=await run('trafficIsland.scene.stats().frameCount');await run('new Promise(r=>setTimeout(r,350))');assert.equal(await run('trafficIsland.scene.stats().frameCount'),count,'No animation loop in the device view');
   await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await shot('mobile');assert.equal(await run('document.documentElement.scrollWidth<=innerWidth'),true);
-  await run("trafficIsland.show('monitor')");assert.equal(await run('trafficIsland.scene.deviceState().visible'),false);assert.equal(await run('trafficIsland.scene.stats().routeCount'),30);assert.equal(await run("document.querySelector('#vd-detail').hidden"),true);
+  await run("trafficIsland.show('monitor')");assert.equal(await run('trafficIsland.scene.deviceState().visible'),true);assert.equal(await run('trafficIsland.scene.deviceState().count'),90);assert.equal(await run('trafficIsland.scene.stats().routeCount'),30);assert.equal(await run("document.querySelector('#vd-detail').hidden"),true);
   await run("trafficIsland.show('scenario')");assert.equal(await run('trafficIsland.scene.deviceState().visible'),false);assert.equal(await run("document.querySelector('#vd-controls').hidden"),true);
   await send('Network.setBlockedURLs',{urls:['*127.0.0.1:4173/data/*','*127.0.0.1:4173/*.js','*127.0.0.1:4173/*.css']});
   await navigate('traffic-island-standalone.html?view=devices');assert.equal(await run('document.body.dataset.renderStatus'),'ready');assert.equal(await run('vdLocationState.count'),128);assert.equal(await run("document.querySelector('#vd-refresh').disabled"),true);

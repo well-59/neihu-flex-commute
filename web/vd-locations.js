@@ -5,7 +5,7 @@ const clock=value=>Number.isFinite(Date.parse(value))?new Date(value).toLocaleSt
 const stateNames={fresh:'時間在 3 分鐘內',stale:'樣本已過期',future:'時間異常',missing:'沒有觀測時間'};
 const coord=p=>p&&Number.isFinite(p.lat)&&Number.isFinite(p.lon)?`${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`:'未提供';
 
-export function createDeviceView({DATA,getCity}){
+export function createDeviceView({DATA,getCity,onSnapshot}){
  let snapshot=DATA.geography.inventory,devices=deviceInventory(snapshot,DATA.observations,DATA.geography.roads.bbox),active=false;
  let selected=devices.find(d=>d.id==='VQBUL20')?.id||devices[0]?.id,linkId=null,loading=false,error='',request=null,updated=false;
  const card=document.createElement('aside');card.id='vd-detail';card.className='detail-card';card.hidden=true;
@@ -51,7 +51,7 @@ export function createDeviceView({DATA,getCity}){
  $('vd-table').onclick=e=>{const b=e.target.closest('[data-vd-id]');if(b)select(b.dataset.vdId,b.dataset.vdLink);};
  $('vd-device-select').onchange=()=>select($('vd-device-select').value);
  $('vd-search').oninput=()=>{$('vd-list').open=true;render();};
- $('vd-refresh').onclick=async()=>{if(loading||window.ISLAND_DATA)return;loading=true;error='';request=new AbortController();const timeout=setTimeout(()=>request?.abort(),50000);render();try{const response=await fetch('/api/monitoring',{cache:'no-store',signal:request.signal});if(!response.ok)throw Error('請確認本機預覽服務與網路。');const next=await response.json();if(next.schemaVersion!==1||!next.rows?.length||next.sources?.VD?.status!=='PARSED')throw Error('設備清單未取得；保留原本盤點與時間。');snapshot=next;updated=true;rebuild();if(next.sources.VDLive?.status!=='PARSED')error='設備已更新，但分鐘觀測未取得。';}catch(e){error=e.name==='AbortError'?'更新已中止或逾時；保留原本盤點。':e.message;}finally{clearTimeout(timeout);request=null;loading=false;render();}};
+ $('vd-refresh').onclick=async()=>{if(loading||window.ISLAND_DATA)return;loading=true;error='';request=new AbortController();const timeout=setTimeout(()=>request?.abort(),50000);render();try{const response=await fetch('/api/monitoring',{cache:'no-store',signal:request.signal});if(!response.ok)throw Error('請確認本機預覽服務與網路。');const next=await response.json();if(next.schemaVersion!==1||!next.rows?.length||next.sources?.VD?.status!=='PARSED')throw Error('設備清單未取得；保留原本盤點與時間。');snapshot=next;updated=true;rebuild();onSnapshot?.(snapshot);if(next.sources.VDLive?.status!=='PARSED')error='設備已更新，但分鐘觀測未取得。';}catch(e){error=e.name==='AbortError'?'更新已中止或逾時；保留原本盤點。':e.message;}finally{clearTimeout(timeout);request=null;loading=false;render();}};
  function setActive(value){active=value;card.hidden=!value;controls.hidden=!value;
   if(value){$('scene-title').innerHTML='這個數字，<br><em>在哪裡量到？</em>';$('scene-subtitle').textContent='點 VD，沿著設備、方向與路段追溯來源。';$('scene-legend').innerHTML='<span><i style="background:#237e9b"></i>VD 官方座標</span><span><i style="background:#e66e3e"></i>已選 VD／偵測方向</span><span>藍線＝TDX 對應線形 · 虛線＝位置對照，非感測範圍</span>';render();}
   else{request?.abort();$('scene-legend').innerHTML=savedLegend;if(window.vdLocationState)window.vdLocationState.active=false;}

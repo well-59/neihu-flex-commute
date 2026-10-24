@@ -30,3 +30,13 @@ test('published inventory is the audited source snapshot, not a fabricated live 
  const globals={window:{}};vm.runInNewContext(fs.readFileSync(new URL('../web/data/vd-inventory.js',import.meta.url),'utf8'),globals);
  assert.equal(JSON.stringify(globals.window.VD_INVENTORY),JSON.stringify(snapshot));
 });
+
+test('supplemental road overlays use exact references and stay inside map bounds',async()=>{
+ const {referenceRoads}=await import('../web/vd-location-model.js');
+ const devices=deviceInventory(snapshot,history,bbox),roads=referenceRoads(devices,bbox);
+ assert.ok(roads.length>0);assert.equal(new Set(roads.map(r=>r.id)).size,roads.length);
+ for(const r of roads){const link=devices.flatMap(d=>d.links).find(l=>l.id===r.id);assert.ok(link.reference);assert.equal(link.reference.linkId,r.linkId);assert.equal(link.reference.bearing,r.bearing);for(const p of r.segments.flat())assert.ok(p[0]>=bbox[0]-1e-9&&p[0]<=bbox[2]+1e-9&&p[1]>=bbox[1]-1e-9&&p[1]<=bbox[3]+1e-9);}
+ const omitted=referenceRoads(devices,bbox,[roads[0].id]);assert.ok(!omitted.some(r=>r.id===roads[0].id));
+ const unknown=devices.filter(d=>d.links.every(l=>!l.reference));assert.equal(referenceRoads(unknown,bbox).length,0);
+ const wrong=structuredClone(devices);for(const d of wrong)for(const l of d.links)l.bearing='INVALID';assert.equal(referenceRoads(wrong,bbox).length,0);
+});

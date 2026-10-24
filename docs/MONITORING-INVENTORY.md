@@ -1,6 +1,6 @@
 # 內湖道路監控來源與設備盤點
 
-盤點產生：2026-10-24T03:32:59.123474+00:00。來源觀測更新：2026-10-24T11:31:40.001+08:00。
+盤點產生：2026-10-24T05:15:08.254973+00:00。來源觀測更新：2026-10-24T13:13:40.001+08:00。
 
 **FACT：這是單次官方來源回傳的盤點，不是全天有效率，也不是完整內湖監控覆蓋。**
 範圍沿用既有收集器：經度 121.555–121.640、緯度 25.040–25.100，包含部分松山、信義、南港接近道路。
@@ -11,8 +11,8 @@
 | 既有歷史快照 | 56 | 84 | 81 | 21 |
 
 本次另有 52 個官方發布 SectionID；它與 VD 的 LinkID 是不同口徑，不相加。
-182 個設備方向通過本次結構與設備基本檢查，尚須檢查觀測時間才能當即時資料。
-其中 182 個方向在接收當下也通過 180 秒時效檢查；這是單次可用數，不是長期完整度。
+184 個設備方向通過本次結構與設備基本檢查，尚須檢查觀測時間才能當即時資料。
+其中 184 個方向在接收當下也通過 180 秒時效檢查；這是單次可用數，不是長期完整度。
 110 個設備方向未見於既有快照，不自動套用鄰近路段幾何。
 
 ## 實際收集的來源
@@ -20,9 +20,9 @@
 | 來源 | 介接位置 | 解析結果 | 全市筆數 | 來源更新時間 |
 |---|---|---|---:|---|
 | VD | [VD.xml](https://tcgbusfs.blob.core.windows.net/blobtisv/VD.xml) | PARSED | 604 | 2026-10-24T00:00:00.000+08:00 |
-| VDLive | [VDLive.xml](https://tcgbusfs.blob.core.windows.net/blobtisv/VDLive.xml) | PARSED | 612 | 2026-10-24T11:31:40.001+08:00 |
+| VDLive | [VDLive.xml](https://tcgbusfs.blob.core.windows.net/blobtisv/VDLive.xml) | PARSED | 612 | 2026-10-24T13:13:40.001+08:00 |
 | Section | [Section.xml](https://tcgbusfs.blob.core.windows.net/blobtisv/Section.xml) | PARSED | 818 | 2026-10-24T00:00:00.000+08:00 |
-| LiveTraffic | [LiveTraffic.xml](https://tcgbusfs.blob.core.windows.net/blobtisv/LiveTraffic.xml) | PARSED | 818 | 2026-10-24T11:31:30.001+08:00 |
+| LiveTraffic | [LiveTraffic.xml](https://tcgbusfs.blob.core.windows.net/blobtisv/LiveTraffic.xml) | PARSED | 818 | 2026-10-24T13:13:30.001+08:00 |
 
 - 公開 XML 來源：[臺北市 VD 靜態資料集](https://data.taipei/dataset/detail?id=47cb9090-e1c9-4b1d-b299-b11c375c5ee2)。四個 URL 也已存在本專案 `collector/collect.mjs`。
 - 歷史資料：隊友 TDX 彙整快照，日期 2026-09-23–10-22、07:00–09:30，56 設備／84 方向；原始分鐘檔未隨快照提供。[既有 API 清單](TDX-API-CATALOG.md)。
@@ -39,7 +39,7 @@
 | 光復北路 | 3 | 6 | 6 | 6 |
 | 光復南路 | 3 | 5 | 5 | 5 |
 | 內湖路一段 | 8 | 8 | 6 | 8 |
-| 八德路四段 | 3 | 6 | 6 | 4 |
+| 八德路四段 | 3 | 6 | 6 | 6 |
 | 北安路 | 1 | 1 | 1 | 1 |
 | 南京東路五段 | 1 | 1 | 1 | 1 |
 | 南京東路六段 | 2 | 2 | 2 | 2 |

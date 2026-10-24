@@ -1,3 +1,5 @@
+let analysisDetailOpen=false;
+import {renderPeriodComparison,slotTime} from './period-comparison.js';
 import {validateSnapshot,summarize,periodEvidence,qualityRows} from './route-evidence-model.js';
 import {renderEvidenceMap,trafficColor} from './route-evidence-map.js';
 const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -23,6 +25,7 @@ function kpis(){
  ];
  $('route-kpis').innerHTML=cards.map(([name,value,note],i)=>`<article data-kpi="${i}"><span>${name}</span><strong>${esc(value)}</strong><small>${esc(note)}</small></article>`).join('');
 }
+$('route-analysis-slot').onchange=()=>{index=Number($('route-analysis-slot').value);draw();};
 function draw(){
  summary=summarize(data,{skipHolidays:$('route-holidays').checked,date:$('route-date').value||null,metric:$('route-metric').value,scope:$('route-scope').value});
  if(!summary.rows.some(r=>r.id===selected)){selected=summary.rows[0]?.id;focusedGate=null;$('map-note').textContent='所選方向不在目前範圍，已選取此範圍的第一個方向。';}
@@ -32,6 +35,8 @@ function draw(){
  const topFlow=summary.flow[0],topJam=summary.congestion[0];
  $('route-insight').textContent=topFlow&&topJam?`平均車流率最高：${label(topFlow)}；低速比例最高：${label(topJam)}。${topFlow.id===topJam.id?'此樣本兩者相同。':'車多與常低速，出現在不同路段。'} 分級比例不是最塞排名。`:'所選日期沒有可排名資料，不將缺值當成順暢。';
  kpis();
+ $('route-analysis-slot').innerHTML=Array.from({length:10},(_,i)=>`<option value="${i}" ${i===index?'selected':''}>${slotTime(i)}–${slotTime(i+1)}</option>`).join('');
+ $('route-period-comparison').innerHTML=renderPeriodComparison(summary,window.NEIHU_PERIOD_FLOW,index,{routeAttribute:'data-route',selectedId:selected,detailOpen:analysisDetailOpen});
  const rows=$('route-limit').value==='10'?summary.ranked.slice(0,10):summary.rows;
  $('route-heat').innerHTML=`<thead><tr><th scope="col">${summary.metric==='flow'?'依平均車流率':'依低速比例'}排序 · ${rows.length} 列</th><th scope="col">${summary.metric==='flow'?'平均每分鐘通過':'低速時間占比'}<small>所選日期 07:00–09:30</small></th><th scope="col">歷史平均車速<small>07:00–09:30</small></th>${Array.from({length:10},(_,i)=>`<th scope="col" class="${index===i?'active-period':''}">${time(i)}</th>`).join('')}</tr></thead><tbody>${rows.map(d=>{
   const h=summary.heat.find(r=>r.direction.id===d.id),flow=summary.flow.find(r=>r.id===d.id),speed=summary.congestion.find(r=>r.id===d.id);
@@ -70,6 +75,8 @@ fetch('data/route-clarity.json').then(r=>{if(!r.ok)throw Error('無法載入');r
  $('route-scope').addEventListener('change',()=>{$('route-scope-notice').hidden=true;});
  for(const id of ['route-date','route-metric','route-holidays','route-scope','route-limit'])$(id).addEventListener('change',draw);
  $('route-heat').addEventListener('click',e=>{const b=e.target.closest('[data-route]');if(b){selected=b.dataset.route;focusedGate=null;$('map-note').textContent='熱度圖選取的 VD 方向；彩色線為點位分級映射，非整段旅速。';if(b.dataset.period!==undefined)index=Number(b.dataset.period);draw();}});
+ $('route-period-comparison').addEventListener('toggle',e=>{if(e.target.matches('.period-cell-detail'))analysisDetailOpen=e.target.open;},true);
+ $('route-period-comparison').addEventListener('click',e=>{const cell=e.target.closest('[data-heat-route]'),column=e.target.closest('[data-heat-column]');if(cell||column){if(cell){selected=cell.dataset.heatRoute;index=Number(cell.dataset.heatPeriod);analysisDetailOpen=true;focusedGate=null;}else index=Number(column.dataset.heatColumn);draw();return;}const b=e.target.closest('[data-route]');if(!b)return;selected=b.dataset.route;focusedGate=null;index=Number(b.dataset.period);draw();$('map-note').textContent='分時比較選取的測點方向；保留相同日期與 15 分鐘時段。';window.NeihuDashboard.show('monitor',{focus:true});});
  $('route-periods').addEventListener('click',e=>{const b=e.target.closest('[data-map-period]');if(b){index=Number(b.dataset.mapPeriod);draw();}});
  const focusGate=gate=>{
   const loc=window.VD_LOCATIONS.records.find(l=>l.gate===gate),d=data.directions.find(d=>d.vdId===loc?.id&&d.bearing===gateBearing[gate]);

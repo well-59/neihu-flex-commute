@@ -44,7 +44,7 @@ export function createMonitor({summary,getCity,onState}){
   $('live-source-table').innerHTML='<thead><tr><th>來源</th><th>狀態</th><th>來源更新時間</th><th>全市筆數</th></tr></thead><tbody>'+Object.entries(snapshot?.sources||{}).map(([name,s])=>`<tr><th>${esc(name)}</th><td>${s.status==='PARSED'?'取得並解析':'取得失敗'}</td><td>${esc(clock(s.updateTime))}</td><td>${fmt(s.count)}</td></tr>`).join('')+'</tbody>';
   const names=[...new Set((snapshot?.rows||[]).map(r=>r.roadName))].sort((a,b)=>a.localeCompare(b,'zh-TW'));
   $('live-roads-table').innerHTML='<thead><tr><th>道路名稱</th><th>VD 設備</th><th>設備方向</th><th>LinkID</th><th>新近且通過基本檢查</th></tr></thead><tbody>'+names.map(name=>{const items=snapshot.rows.filter(r=>r.roadName===name);return `<tr><th>${esc(name)}</th><td>${new Set(items.map(r=>r.vdId)).size}</td><td>${items.length}</td><td>${new Set(items.map(r=>r.linkId)).size}</td><td>${items.filter(r=>r.basicValid&&freshness(r.dataCollectTime)==='fresh').length}</td></tr>`;}).join('')+'</tbody>';
-  window.trafficMonitoringState={source:'TAIPEI_OPEN_DATA',fetchedAt:snapshot?.fetchedAt||null,selected,rows,fresh: fresh.length,flow:flow.length,error,active};onState?.(window.trafficMonitoringState);
+  window.trafficMonitoringState={source:'TAIPEI_OPEN_DATA',fetchedAt:snapshot?.fetchedAt||null,selected,rows,fresh: fresh.length,flow:flow.length,error,active};onState?.(window.trafficMonitoringState,snapshot);
  }
  async function refresh(){
   if(!active||busy||document.hidden)return;
@@ -55,7 +55,7 @@ export function createMonitor({summary,getCity,onState}){
   catch(e){error=e.name==='AbortError'?'連線已中斷或逾時；保留原時間，過期即停用。':e.message;}
   finally{clearTimeout(timeout);busy=false;request=null;render();}
  }
- function select(id,fly=true){if(!summary.rows.some(d=>d.id===id))return;selected=id;$('live-route').value=id;render();getCity()?.focusRoute(id,fly);}
+ function select(id,fly=true){if(id!==null&&!summary.rows.some(d=>d.id===id))return;selected=id;$('live-route').value=id||'';render();getCity()?.focusRoute(id,fly);}
  function setActive(value){
   active=value;detail.hidden=!value;bar.hidden=!value;clearInterval(timer);
   if(value){helpParts[0].textContent='看懂現在的道路觀測';helpParts[1].innerHTML='<li>選擇路段與方向，查看觀測時間。</li><li>比較汽車類、機車的分鐘流量與採用速度。</li><li>展開來源清單，核對設備與缺資料範圍。</li>';helpParts[2].textContent='只在流量與速度有效的對應路段播放車輛。顏色是固定速度色帶，不是官方服務水準。模型疏密依分鐘車次分級，動畫速度使用統一 4 倍時間；不代表逐車軌跡、機車專屬速度或排隊長度。無觀測與過期路段不補造車流。';$('map-caption').innerHTML='<span class="compass">N ↑</span> 道路位置有依據 · 建物與高度示意<br><small>© OpenStreetMap contributors / ODbL · 臺北市即時觀測 / 既有 TDX 線形</small>';$('scene-title').innerHTML='現在的路況，<br><em>看得見依據。</em>';$('scene-subtitle').textContent='從官方觀測，追蹤每個方向的變化。';$('scene-legend').innerHTML='<span><i class="high"></i>≤15 km/h</span><span><i style="background:#ddab64"></i>15–30</span><span><i class="low"></i>>30</span><span><i class="unknown"></i>無有效速度</span><span>固定速度色帶，非官方壅塞等級；車輛疏密＝分車種分鐘流量分級</span>';render();refresh();timer=setInterval(()=>{if(document.hidden)return;render();if(Date.now()-lastAttempt>=60000)refresh();},15000);}

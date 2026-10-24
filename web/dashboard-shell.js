@@ -10,6 +10,7 @@
  source.classList.add('dashboard-filterbar');source.querySelector('.panel-head').remove();
  const move=(selector,key)=>{const el=$(selector);if(el)pages[key].append(el);};
  move('#route-kpis','monitor');move('#route-insight','monitor');move('.route-layout','monitor');
+ move('.period-comparison-panel','analysis');
  move('.route-heat-section','analysis');
  const selected=document.createElement('div');selected.className='analysis-selection panel';selected.innerHTML='<div><p class="eyebrow">共用觀測選取</p><h2 id="analysis-selected">請選取路段</h2><p id="analysis-period" class="small-note"></p></div><div class="detail-actions"><button data-open-page="monitor">在唯一地圖查看 ↗</button><button data-open-page="quality">資料品質 ↗</button></div>';pages.analysis.prepend(selected);
  const legacy=document.createElement('details');legacy.id='legacy-evidence';legacy.className='legacy-evidence';legacy.innerHTML='<summary>補充證據：三走廊單日比較與 2025 路口調查 <span>獨立日期與口徑，不跟隨上方多日篩選</span></summary>';pages.analysis.append(legacy);legacy.append($('#corridors'),$('#evidence'));

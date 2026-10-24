@@ -5,16 +5,18 @@ import {nearestOnReference,bearingNames} from './vd-location-model.js';
 export function createDeviceLayer(parent,project,onSelect,wake,focus){
  const group=new THREE.Group();group.visible=false;parent.add(group);
  const geometry=new THREE.SphereGeometry(.105,10,8),material=new THREE.MeshBasicMaterial({color:0xffffff,depthTest:false});
+ const contextRoads=new THREE.Group();group.add(contextRoads);let contextKey='',extraRoads=[];
  const relation=new THREE.Group();group.add(relation);let mesh=null,devices=[],label=null,selected=null,key='';
  const dummy=new THREE.Object3D();let relationInfo=null;
  function clearRelation(){for(const child of [...relation.children]){relation.remove(child);child.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});}if(label){group.remove(label);label.element.remove();label=null;}}
- function draw(all,id,link){
+ function draw(all,id,link,{references=[]}={}){
+  const roadKey=JSON.stringify(references);if(roadKey!==contextKey){contextKey=roadKey;extraRoads=references;for(const c of [...contextRoads.children]){contextRoads.remove(c);c.geometry.dispose();c.material.dispose();}for(const r of references){const points=r.segments.flatMap(pair=>pair.map(p=>project(...p,1.075)));const line=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:0x237e9b,depthTest:false,transparent:true,opacity:.7}));line.userData.device=r.vdId;line.userData.link=r.linkId;line.renderOrder=18;contextRoads.add(line);}}
   selected=id;const visible=all.filter(d=>d.inMap),nextKey=JSON.stringify(visible.map(d=>[d.id,d.position]));
   if(nextKey!==key){key=nextKey;devices=visible;if(mesh){group.remove(mesh);mesh.dispose();}
    mesh=new THREE.InstancedMesh(geometry,material,devices.length);mesh.frustumCulled=false;mesh.renderOrder=20;
    devices.forEach((d,i)=>{dummy.position.copy(project(d.position.lon,d.position.lat,1.1));dummy.scale.setScalar(1);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});group.add(mesh);
   }
-  devices.forEach((d,i)=>mesh.setColorAt(i,new THREE.Color(d.id===id?0xe66e3e:0x237e9b)));if(mesh)mesh.instanceColor.needsUpdate=true;
+  devices.forEach((d,i)=>mesh.setColorAt(i,new THREE.Color(d.id===id?0xe66e3e:0x237e9b)));if(mesh?.instanceColor)mesh.instanceColor.needsUpdate=true;
   clearRelation();relationInfo={linkId:link?.linkId||null,bearing:link?.bearing||null,hasReference:!!link?.reference};const device=devices.find(d=>d.id===id);
   if(device){
    const p=project(device.position.lon,device.position.lat,1.1);
@@ -28,5 +30,5 @@ export function createDeviceLayer(parent,project,onSelect,wake,focus){
   }
   wake();
  }
- return {draw,setActive(value){group.visible=value;if(label)label.visible=value;wake();},pick(ray){if(!group.visible||!mesh)return false;const hit=ray.intersectObject(mesh,false)[0];if(!hit)return false;onSelect({device:devices[hit.instanceId].id});return true;},focus(id){const d=devices.find(d=>d.id===id);if(d)focus(project(d.position.lon,d.position.lat,1.1),new THREE.Vector3(5,8,10));},inspect(){return {visible:group.visible,count:devices.length,selected,relation:relationInfo,positions:devices.map(d=>({id:d.id,...d.position,world:project(d.position.lon,d.position.lat,1.1).toArray()}))};}};
+ return {draw,setActive(value){group.visible=value;if(label)label.visible=value;wake();},pick(ray){if(!group.visible||!mesh)return false;const hit=ray.intersectObject(mesh,false)[0];if(hit){onSelect({device:devices[hit.instanceId].id});return true;}const old=ray.params.Line.threshold;ray.params.Line.threshold=.06;const line=ray.intersectObjects(contextRoads.children,false)[0];ray.params.Line.threshold=old;if(!line)return false;onSelect({device:line.object.userData.device,link:line.object.userData.link});return true;},focus(id){const d=devices.find(d=>d.id===id);if(d)focus(project(d.position.lon,d.position.lat,1.1),new THREE.Vector3(5,8,10));},inspect(){return {visible:group.visible,count:devices.length,selected,referenceRoads:extraRoads,relation:relationInfo,positions:devices.map(d=>({id:d.id,...d.position,world:project(d.position.lon,d.position.lat,1.1).toArray()}))};}};
 }

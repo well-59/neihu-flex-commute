@@ -25,3 +25,22 @@ export function nearestOnReference(position,shape){
  }
  return best;
 }
+
+// Reference overlays are clipped to the visible map and never guessed from nearby roads.
+export function referenceRoads(devices,bbox,shownIds=[]){
+ const shown=new Set(shownIds),seen=new Set(),result=[];
+ for(const device of devices.filter(d=>d.inMap))for(const link of device.links){
+  const d=link.reference;
+  if(!d||d.id!==link.id||d.linkId!==link.linkId||d.bearing!==link.bearing||d.roadName!==link.roadName||shown.has(d.id)||seen.has(d.id))continue;
+  const shape=d.geometry?.shape;if(!Array.isArray(shape))continue;
+  const segments=[];
+  for(let i=1;i<shape.length;i++){
+   const a=shape[i-1],b=shape[i];if(a?.length!==2||b?.length!==2||![...a,...b].every(Number.isFinite))continue;
+   let lo=0,hi=1;const dx=b[0]-a[0],dy=b[1]-a[1],ps=[-dx,dx,-dy,dy],qs=[a[0]-bbox[0],bbox[2]-a[0],a[1]-bbox[1],bbox[3]-a[1]];
+   for(let j=0;j<4;j++){if(ps[j]===0){if(qs[j]<0){hi=-1;break;}}else{const t=qs[j]/ps[j];if(ps[j]<0)lo=Math.max(lo,t);else hi=Math.min(hi,t);}}
+   if(lo<=hi&&hi>=0&&lo<=1&&Math.hypot(dx,dy)>0)segments.push([[a[0]+dx*lo,a[1]+dy*lo],[a[0]+dx*hi,a[1]+dy*hi]]);
+  }
+  if(segments.length){seen.add(d.id);result.push({id:d.id,vdId:device.id,roadName:d.roadName,linkId:link.linkId,bearing:link.bearing,segments});}
+ }
+ return result;
+}
