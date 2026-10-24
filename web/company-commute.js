@@ -1,5 +1,6 @@
 import {periodEvidence} from './route-evidence-model.js';
-import {insideBounds,bearingNames} from './vd-location-model.js';
+import {insideBounds,bearingNames,relativePosition} from './vd-location-model.js';
+export {relativePosition};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Number.isFinite(n)?n.toLocaleString('zh-TW',{maximumFractionDigits:1}):'—';
 const clock=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
@@ -9,15 +10,6 @@ export function arrivalWindow(time){
  const [h,m]=time.split(':').map(Number),end=h*60+m;
  if(end<15)throw Error('目前不支援跨日前 15 分鐘的比較');
  return {start:end-15,end,label:`${clock(end-15)}–${clock(end)}`};
-}
-export function relativePosition(company,point){
- const valid=p=>Number.isFinite(p?.lat)&&Number.isFinite(p?.lon)&&Math.abs(p.lat)<=90&&Math.abs(p.lon)<=180;
- if(!valid(company)||!valid(point))throw Error('位置座標無效');
- const r=Math.PI/180,a=company.lat*r,b=point.lat*r,dl=(point.lon-company.lon)*r,dp=b-a;
- const h=Math.sin(dp/2)**2+Math.cos(a)*Math.cos(b)*Math.sin(dl/2)**2;
- const distance=6371000*2*Math.atan2(Math.sqrt(Math.min(1,h)),Math.sqrt(Math.max(0,1-h)));
- const bearing=(Math.atan2(Math.sin(dl)*Math.cos(b),Math.cos(a)*Math.sin(b)-Math.sin(a)*Math.cos(b)*Math.cos(dl))/r+360)%360;
- return {distance,azimuth:bearing,sector:distance<1?'C':['N','E','S','W'][Math.floor((bearing+45)/90)%4]};
 }
 export function companyEvidence(summary,company,bbox){
  const window=arrivalWindow(company.time);

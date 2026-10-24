@@ -2,6 +2,16 @@ export const bearingNames={N:'北向',S:'南向',E:'東向',W:'西向',NE:'東�
 export function insideBounds(position,bbox){
  return Number.isFinite(position?.lon)&&Number.isFinite(position?.lat)&&position.lon>=bbox[0]&&position.lon<=bbox[2]&&position.lat>=bbox[1]&&position.lat<=bbox[3];
 }
+// Great-circle distance and initial azimuth from the company; four 90° sectors, C within 1 m.
+export function relativePosition(company,point){
+ const valid=p=>Number.isFinite(p?.lat)&&Number.isFinite(p?.lon)&&Math.abs(p.lat)<=90&&Math.abs(p.lon)<=180;
+ if(!valid(company)||!valid(point))throw Error('位置座標無效');
+ const r=Math.PI/180,a=company.lat*r,b=point.lat*r,dl=(point.lon-company.lon)*r,dp=b-a;
+ const h=Math.sin(dp/2)**2+Math.cos(a)*Math.cos(b)*Math.sin(dl/2)**2;
+ const distance=6371000*2*Math.atan2(Math.sqrt(Math.min(1,h)),Math.sqrt(Math.max(0,1-h)));
+ const bearing=(Math.atan2(Math.sin(dl)*Math.cos(b),Math.cos(a)*Math.sin(b)-Math.sin(a)*Math.cos(b)*Math.cos(dl))/r+360)%360;
+ return {distance,azimuth:bearing,sector:distance<1?'C':['N','E','S','W'][Math.floor((bearing+45)/90)%4]};
+}
 export function deviceInventory(snapshot,history,bbox){
  const devices=new Map(),references=new Map(history.directions.map(d=>[d.id,d]));
  for(const row of snapshot?.rows||[]){
