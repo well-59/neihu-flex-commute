@@ -1,5 +1,20 @@
 # 內湖時間島
 
+把每天塞車的內湖，做成一座 3D 微縮城市。
+
+**👉 線上試玩：<https://neihu-flex-commute.vercel.app>**
+
+[![內湖時間島：內湖 3D 微縮城市與道路標籤](web/og-image.png)](https://neihu-flex-commute.vercel.app)
+
+- **即時路況**：21 條道路、80 個偵測方向，每分鐘更新
+- **塞車回放**：近一個月平日早上的低速變化
+- **通勤時段比較**、**彈性工時獎勵**：同一條路不同出發時間的差別
+- 全部使用臺北市政府公開資料，不需要金鑰
+
+緣起：公民科技黑客松「市政 debug 松」issue #4「內湖尖峰車流好比停車場」。
+
+## 技術說明
+
 **目前版本：v9 內湖道路監控模型島** — 內湖園區搞清楚要走的路。
 
 預設開啟即時監控：依官方區界分類的 **52 個現行 VD、80 個設備方向、21 個道路名稱**全部保留並對照至模型道路。已補入東湖路、成功路五段、成功路四段、文德路；共用 LinkID 的測點仍可分別檢視，動畫不加總重複設備的流量。道路名稱／方向可搜尋、鍵盤選取，點路段或標籤可看速度、路況等級與依據、汽機車分鐘量、觀測時間、偵測車道與 VD／LinkID。
@@ -12,7 +27,7 @@
 
 - [3D 主畫面](web/traffic-island.html)：道路模型、歷史回放、路段分析、通勤時段比較、彈性工時獎勵、獎勵兌換商品、資料品質。
 - VD 測點已整合至「即時監控」與「城市回放」，主導覽暫時移除獨立「VD 位置」分頁；原設備頁程式與資料保留。
-- [即時監控](http://127.0.0.1:4173/traffic-island.html?view=live)：同一張 3D 地圖，以臺北市公開 VD／路段觀測更新；需本機服務與 Python 3。
+- [即時監控](https://neihu-flex-commute.vercel.app/traffic-island.html?view=live)：同一張 3D 地圖，以臺北市公開 VD／路段觀測更新；線上版由 Vercel functions 提供，本機預覽需本機服務與 Python 3（<http://127.0.0.1:4173/traffic-island.html?view=live>）。
 - [單一 HTML 展示檔](web/traffic-island-standalone.html)：內嵌資料與程式，Three.js CDN 仍需網路。
 - [2D 備援與單日補充](web/planner.html)、[五頁提案](web/proposal.html)、[官方路口調查](web/evidence/index.html)。
 
@@ -221,3 +236,5 @@ node tests/vd-location-browser.cjs
 PASS：`tests/map-interaction-browser.cjs`（桌面／手機手勢、21 道路、來源數值、車種原配色、單檔）；專用 Chrome 近景／全景按鈕與 390px 工具列檢查、觀測資料不變、無未捕捉例外；桌面全景／近景及手機近景截圖已檢視。單檔匯出、diff 檢查通過。實體手機效能未驗證。
 
 2026-10-24 後續同步遠端 `5422787`，保留 Vercel 部署設定與兩支 API，整合模型調整。重新驗證 PASS：117 項 Node 測試、10 項 Python 測試、單檔匯出及 diff 檢查；前端實作未因這次部署設定整合改變，沿用上述瀏覽器驗證。GitHub repo 已確認為 PUBLIC；公開網站的部署結果仍為 UNVERIFIED，本次不另執行部署指令。若採純靜態展示，可使用 `web/traffic-island-standalone.html`（Three.js CDN 仍需連網），不含即時 API 與文字搜尋；完整網站需搭配本機服務或新增的 Vercel functions。
+
+2026-10-27 確認公開網站：<https://neihu-flex-commute.vercel.app> 首頁與 `traffic-island.html` 回應 200，頁面標題與 repo 一致；`/api/monitoring` 回應 200（約 1 秒）。上一段「公開網站的部署結果仍為 UNVERIFIED」以此更新。新增分享預覽（Open Graph／Twitter card 標籤，三頁相同）、`web/og-image.png`、`web/robots.txt`、`web/sitemap.xml`；單檔只在 `<head>` 加上相同標籤，未重新匯出（本機 `core.autocrlf=true` 會讓重新匯出產生換行差異）。
