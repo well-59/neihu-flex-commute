@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://neihu-flex-commute.vercel.app/sitemap.xml
